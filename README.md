@@ -4,7 +4,7 @@ A community RunPod **Pod** template for text-to-image generation and image editi
 
 ## Create a Pod
 
-1. Open the [public RunPod template](https://console.runpod.io/hub) and choose **Turbo Image Studio (Qwen Image 2.1 Turbo)**.
+1. Open the [public RunPod Pod template](https://console.runpod.io/hub/template/92ov0cv1fr).
 2. Choose a GPU Pod with at least 48 GB of VRAM for the tested configuration.
 3. Keep the 70 GB container disk or increase it if you plan to keep many outputs.
 4. Start the Pod and open the HTTP service on port `7860`.
