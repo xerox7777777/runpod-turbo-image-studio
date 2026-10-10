@@ -5,7 +5,7 @@ from aiohttp import web
 
 @web.middleware
 async def prompt_guard(request, handler):
-    if request.method == "POST" and request.path == "/prompt":
+    if request.method == "POST" and request.path in ("/prompt", "/api/prompt"):
         try:
             body = await request.json()
         except (json.JSONDecodeError, UnicodeDecodeError):

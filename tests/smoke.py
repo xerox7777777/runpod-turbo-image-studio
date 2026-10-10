@@ -41,15 +41,16 @@ def comfy_verify(data):
     info=json.loads(data)
     assert 'OfficialTurboGenerate' in info and 'OfficialTurboEdit' in info
     for body in [b'{broken', b'null', b'[]', b'{}', b'{"prompt":{}}', b'{"prompt":{"1":null}}', b'{"prompt":{"1":{"class_type":"X","inputs":[]}}}']:
-        request=urllib.request.Request('http://127.0.0.1:8188/prompt',data=body,headers={'Content-Type':'application/json'})
-        try:
-            urllib.request.urlopen(request,timeout=5)
-        except urllib.error.HTTPError as exc:
-            assert exc.code == 400, (body,exc.code)
-            assert 'error' in json.loads(exc.read())
-        else:
-            raise AssertionError('Invalid request accepted: '+repr(body))
-    print('PASS seven malformed request envelopes rejected with HTTP 400',flush=True)
+        for route in ('/prompt','/api/prompt'):
+            request=urllib.request.Request('http://127.0.0.1:8188'+route,data=body,headers={'Content-Type':'application/json'})
+            try:
+                urllib.request.urlopen(request,timeout=5)
+            except urllib.error.HTTPError as exc:
+                assert exc.code == 400, (route,body,exc.code)
+                assert 'error' in json.loads(exc.read())
+            else:
+                raise AssertionError('Invalid request accepted: '+repr(body))
+    print('PASS seven malformed request envelopes on both prompt routes rejected with HTTP 400',flush=True)
     for path in Path('/app/workflows/api').glob('*.json'):
         workflow=json.loads(path.read_text())
         for node in workflow.values():
