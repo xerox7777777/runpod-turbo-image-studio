@@ -2,6 +2,7 @@
 import gc
 import json
 import logging
+import math
 import os
 import secrets
 import threading
@@ -25,15 +26,17 @@ def validate(prompt, width, height, seed):
     if not isinstance(prompt, str) or not prompt.strip():
         raise ValueError("Enter a prompt first.")
     for label, value in (("Width", width), ("Height", height)):
-        if int(value) != value or value < 512 or value > 2752 or value % 16:
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or int(value) != value or value < 512 or value > 2752 or value % 16:
             raise ValueError(f"{label} must be 512–2752 and divisible by 16.")
-    if int(seed) != seed or seed < -1 or seed > 2147483647:
+    if isinstance(seed, bool) or not isinstance(seed, (int, float)) or not math.isfinite(seed) or int(seed) != seed or seed < -1 or seed > 2147483647:
         raise ValueError("Seed must be -1 (random) or 0–2147483647.")
 
 
 def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=None):
     global _pipeline
     validate(prompt, width, height, seed)
+    if source_image is not None and not isinstance(source_image, Image.Image):
+        raise ValueError("Input image must be a decoded image.")
     if not torch.cuda.is_available():
         raise RuntimeError("No CUDA GPU is available. Deploy on an NVIDIA GPU Pod; CPU mode only checks startup.")
     actual_seed = int(seed) if seed >= 0 else secrets.randbelow(2**31)

@@ -8,6 +8,15 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import engine
 
+# Unit tests import these nodes without a running ComfyUI server.
+try:
+    import server
+except ImportError:
+    pass
+else:
+    from request_guard import install
+    install()
+
 
 class TurboGenerate:
     @classmethod

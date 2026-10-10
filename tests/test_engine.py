@@ -2,6 +2,8 @@ import importlib.util
 import json
 import tempfile
 import unittest
+import concurrent.futures
+import time
 from pathlib import Path
 from unittest.mock import patch
 from types import SimpleNamespace
@@ -63,6 +65,62 @@ class EngineTests(unittest.TestCase):
         with patch.object(engine.torch.cuda, 'is_available', return_value=False):
             with self.assertRaisesRegex(RuntimeError, 'No CUDA'):
                 engine.run('x',512,512,0)
+
+    def test_unusual_invalid_inputs_before_loading(self):
+        engine._pipeline = None
+        with patch.object(engine.QwenImage21Pipeline, 'from_pretrained') as load:
+            for value in [None, True, '512', float('nan'), float('inf'), 512.5]:
+                with self.assertRaises(ValueError):
+                    engine.run('x', value, 512, 0)
+                with self.assertRaises(ValueError):
+                    engine.run('x', 512, 512, value)
+            with self.assertRaisesRegex(ValueError, 'decoded image'):
+                engine.run('x',512,512,0,source_image='file.png')
+            load.assert_not_called()
+
+    def test_concurrent_requests_are_serialized(self):
+        class Busy(FakePipeline):
+            active = 0
+            peak = 0
+            def __call__(self, **kwargs):
+                self.active += 1
+                self.peak = max(self.peak, self.active)
+                time.sleep(0.03)
+                result = super().__call__(**kwargs)
+                self.active -= 1
+                return result
+        pipeline = Busy()
+        engine._pipeline = pipeline
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(engine.run,'x',512,512,n) for n in (1,2)]
+            results = [future.result() for future in futures]
+        self.assertEqual(pipeline.peak,1)
+        self.assertNotEqual(results[0][1],results[1][1])
+
+    def test_output_failure_and_retry(self):
+        for error in [OSError(28,'No space left on device'), PermissionError('read only')]:
+            with patch.object(Image.Image,'save',side_effect=error):
+                with self.assertRaisesRegex(RuntimeError,'Download/cache/output failed'):
+                    engine.run('x',512,512,0)
+            self.assertTrue(Path(engine.run('x',512,512,0)[1]).exists())
+
+    def test_failed_download_retry(self):
+        engine._pipeline = None
+        with patch.object(engine.QwenImage21Pipeline,'from_pretrained',side_effect=[OSError('offline'),FakePipeline()]):
+            with self.assertRaises(RuntimeError):
+                engine.run('x',512,512,0)
+            self.assertIsNone(engine._pipeline)
+            self.assertTrue(Path(engine.run('x',512,512,0)[1]).exists())
+
+    def test_oom_retry(self):
+        class OOM:
+            def __call__(self, **kwargs):
+                raise torch.cuda.OutOfMemoryError('test')
+        engine._pipeline = OOM()
+        with self.assertRaises(RuntimeError):
+            engine.run('x',512,512,0)
+        with patch.object(engine.QwenImage21Pipeline,'from_pretrained',return_value=FakePipeline()):
+            self.assertTrue(Path(engine.run('x',512,512,0)[1]).exists())
 
     def test_oom_resets_pipeline(self):
         class OOM:

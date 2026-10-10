@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+import urllib.error
 from PIL import Image
 
 def check(command, url, verify, env=None):
@@ -39,6 +40,16 @@ def gradio_verify(data):
 def comfy_verify(data):
     info=json.loads(data)
     assert 'OfficialTurboGenerate' in info and 'OfficialTurboEdit' in info
+    for body in [b'{broken', b'null', b'[]', b'{}', b'{"prompt":{}}', b'{"prompt":{"1":null}}', b'{"prompt":{"1":{"class_type":"X","inputs":[]}}}']:
+        request=urllib.request.Request('http://127.0.0.1:8188/prompt',data=body,headers={'Content-Type':'application/json'})
+        try:
+            urllib.request.urlopen(request,timeout=5)
+        except urllib.error.HTTPError as exc:
+            assert exc.code == 400, (body,exc.code)
+            assert 'error' in json.loads(exc.read())
+        else:
+            raise AssertionError('Invalid request accepted: '+repr(body))
+    print('PASS seven malformed request envelopes rejected with HTTP 400',flush=True)
     for path in Path('/app/workflows/api').glob('*.json'):
         workflow=json.loads(path.read_text())
         for node in workflow.values():
@@ -67,7 +78,7 @@ def comfy_verify(data):
             raise AssertionError('Workflow did not finish '+path.name)
     print('PASS four workflow API node/input schemas',flush=True)
 
-env=dict(os.environ, OUTPUT_DIR='/tmp/turbo-smoke-outputs', PORT='7860')
+env=dict(os.environ, OUTPUT_DIR='/tmp/turbo-smoke-outputs', PORT='7860', CUDA_VISIBLE_DEVICES='')
 check([sys.executable,'/app/app.py'],'http://127.0.0.1:7860/config',gradio_verify,env)
 check([sys.executable,'/opt/ComfyUI/main.py','--cpu','--listen','127.0.0.1','--port','8188','--disable-auto-launch'],
       'http://127.0.0.1:8188/object_info',comfy_verify,env)
