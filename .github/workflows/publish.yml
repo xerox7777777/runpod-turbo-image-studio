@@ -29,5 +29,3 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ghcr.io/xerox7777777/runpod-turbo-image-studio:${{ github.ref_name }}
-          cache-from: type=gha,scope=runpod-turbo-image-studio
-          cache-to: type=gha,mode=max,scope=runpod-turbo-image-studio
