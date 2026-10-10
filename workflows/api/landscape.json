@@ -1,0 +1,21 @@
+{
+  "1": {
+    "class_type": "OfficialTurboGenerate",
+    "inputs": {
+      "prompt": "A sailboat on a calm lake at sunrise, natural photographic detail",
+      "width": 1024,
+      "height": 768,
+      "seed": 42
+    }
+  },
+  "2": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "1",
+        0
+      ],
+      "filename_prefix": "Turbo/landscape"
+    }
+  }
+}

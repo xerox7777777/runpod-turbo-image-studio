@@ -1,0 +1,21 @@
+name: Template or workflow bug
+description: Report a reproducible packaging, startup, or workflow problem
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Container version and GPU/VRAM
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce and expected result
+      description: Include mode, dimensions and workflow. Do not include private images or prompts.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant error traceback
+      description: Remove tokens, passwords and proxy URLs before posting.

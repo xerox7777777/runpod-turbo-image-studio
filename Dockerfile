@@ -1,21 +1,13 @@
 FROM runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
-
 LABEL org.opencontainers.image.title="Turbo Image Studio for RunPod"
 LABEL org.opencontainers.image.source="https://github.com/xerox7777777/runpod-turbo-image-studio"
-LABEL org.opencontainers.image.description="Pod UI for text-to-image and image editing with the official Qwen Image 2.1 Turbo checkpoint"
-
-ENV PYTHONUNBUFFERED=1 \
-    HF_HOME=/workspace/.cache/huggingface \
-    OUTPUT_DIR=/workspace/outputs \
-    PORT=7860
-
+ENV PYTHONUNBUFFERED=1 HF_HOME=/workspace/.cache/huggingface OUTPUT_DIR=/workspace/outputs PORT=7860 UI_MODE=comfyui
 WORKDIR /app
+RUN git clone https://github.com/Comfy-Org/ComfyUI.git /opt/ComfyUI && cd /opt/ComfyUI && git checkout 7f7fd918ed0815c5d5ef2ccfe44bfc8e72cfd217
 COPY requirements.txt /app/requirements.txt
-RUN python -m pip install --no-cache-dir -r /app/requirements.txt
-
-COPY app.py /app/app.py
-COPY start_app.sh /start_app.sh
-RUN chmod +x /start_app.sh
-
-EXPOSE 22 7860
-CMD ["/start_app.sh"]
+RUN python -m pip install --no-cache-dir -r /app/requirements.txt -r /opt/ComfyUI/requirements.txt && python -m pip check
+COPY . /app/
+RUN ln -s /app/custom_nodes/turbo_official /opt/ComfyUI/custom_nodes/turbo_official && chmod +x /app/start_app.sh
+RUN python -m unittest discover -s tests -v && python tests/smoke.py && python -m pip freeze > /app/installed-dependencies.txt
+EXPOSE 22 7860 8188
+CMD ["/app/start_app.sh"]
