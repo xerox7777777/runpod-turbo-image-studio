@@ -3,3 +3,6 @@ transformers==5.19.0
 accelerate==1.15.0
 gradio==5.50.0
 pillow==11.3.0
+torch==2.8.0
+torchvision==0.23.0
+torchaudio==2.8.0

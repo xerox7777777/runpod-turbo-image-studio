@@ -14,6 +14,7 @@ from diffusers import QwenImage21Pipeline
 from PIL import Image, PngImagePlugin
 
 MODEL_ID = "Qwen/Qwen-Image-2.1-Turbo"
+MODEL_REVISION = "d65dbc9a7e8f6b5479e33dee6030eaab2a906509"
 OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "/workspace/outputs"))
 _pipeline = None
 _lock = threading.Lock()
@@ -42,7 +43,7 @@ def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=No
             if _pipeline is None:
                 if progress:
                     progress(0.02, desc="Downloading/loading official checkpoint; first use can take several minutes")
-                candidate = QwenImage21Pipeline.from_pretrained(MODEL_ID, dtype=torch.bfloat16)
+                candidate = QwenImage21Pipeline.from_pretrained(MODEL_ID, revision=MODEL_REVISION, dtype=torch.bfloat16)
                 # CPU offload lowers peak VRAM; no quantized or third-party weights.
                 candidate.enable_model_cpu_offload()
                 _pipeline = candidate
@@ -57,7 +58,7 @@ def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=No
                 kwargs["image"] = source_image.convert("RGBA")
             with torch.inference_mode():
                 result = _pipeline(**kwargs).images[0]
-            metadata = dict(model=MODEL_ID, prompt=prompt.strip(), seed=actual_seed,
+            metadata = dict(model=MODEL_ID, model_revision=MODEL_REVISION, prompt=prompt.strip(), seed=actual_seed,
                             width=int(width), height=int(height), mode="edit" if source_image else "generate",
                             load_seconds=round(loaded-started, 3), inference_seconds=round(time.monotonic()-loaded, 3),
                             schedule="checkpoint saved Turbo schedule", use_kv_cache=True)

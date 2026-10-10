@@ -12,6 +12,8 @@ import engine
 
 class FakePipeline:
     calls = []
+    def enable_model_cpu_offload(self):
+        self.offload_enabled = True
     def __call__(self, **kwargs):
         self.calls.append(kwargs)
         return SimpleNamespace(images=[Image.new("RGBA", (kwargs["width"], kwargs["height"]), (0, 100, 200, 128))])
@@ -76,6 +78,14 @@ class EngineTests(unittest.TestCase):
         with patch.object(engine.QwenImage21Pipeline, 'from_pretrained', side_effect=OSError('test')):
             with self.assertRaisesRegex(RuntimeError,'Download/cache/output failed'):
                 engine.run('x',512,512,0)
+
+    def test_load_official_pinned_checkpoint(self):
+        engine._pipeline = None
+        candidate = FakePipeline()
+        with patch.object(engine.QwenImage21Pipeline, 'from_pretrained', return_value=candidate) as load:
+            engine.run('x',512,512,0)
+        load.assert_called_once_with(engine.MODEL_ID, revision=engine.MODEL_REVISION, dtype=torch.bfloat16)
+        self.assertTrue(candidate.offload_enabled)
 
     def test_comfy_nodes(self):
         spec=importlib.util.spec_from_file_location('turbo_node', Path(__file__).resolve().parents[1]/'custom_nodes/turbo_official/__init__.py')

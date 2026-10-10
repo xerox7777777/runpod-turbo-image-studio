@@ -8,6 +8,6 @@ COPY requirements.txt /app/requirements.txt
 RUN python -m pip install --no-cache-dir -r /app/requirements.txt -r /opt/ComfyUI/requirements.txt && python -m pip check
 COPY . /app/
 RUN ln -s /app/custom_nodes/turbo_official /opt/ComfyUI/custom_nodes/turbo_official && chmod +x /app/start_app.sh
-RUN python -m unittest discover -s tests -v && python tests/smoke.py && python -m pip freeze > /app/installed-dependencies.txt
+RUN bash -n /app/start_app.sh && python -m unittest discover -s tests -v && python tests/smoke.py && python -m pip freeze > /app/installed-dependencies.txt
 EXPOSE 22 7860 8188
 CMD ["/app/start_app.sh"]

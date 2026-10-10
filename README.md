@@ -7,7 +7,7 @@ Community **Pod** template for the official `Qwen/Qwen-Image-2.1-Turbo` checkpoi
 ## Start and use
 
 1. Open [the public Pod template](https://console.runpod.io/hub/template/92ov0cv1fr).
-2. Choose an NVIDIA GPU; 48 GB VRAM is the starting recommendation from earlier direct pipeline tests, not a measured minimum for this release. Allow at least 32 GB system RAM and 70 GB disk; more RAM/storage may be needed. The engine uses model CPU offload.
+2. Choose an NVIDIA GPU; 48 GB VRAM is the starting recommendation from earlier direct pipeline tests, not a measured minimum for this release. Allow at least 64 GB system RAM and 70 GB disk; more RAM/storage may be needed. The engine uses model CPU offload.
 3. For a durable model cache, attach your own network volume at `/workspace`. Container disk is ephemeral and can be wiped on restart. This template does not give other users access to the author's volume or outputs.
 4. Start the Pod and open ComfyUI on **8188**. Queuing the first request downloads and loads roughly 32 GB of official checkpoint files. No download happens just by opening the UI.
 5. Open a bundled workflow under ComfyUI's saved workflows, or drag in a JSON from [workflows](workflows). Upload/select an image in LoadImage for editing.
@@ -34,9 +34,9 @@ ComfyUI is reachable by anyone with the proxy URL in the default configuration. 
 
 ## Dependencies, errors and builds
 
-RunPod PyTorch/CUDA base, ComfyUI source and Diffusers source are version pinned in Dockerfile/requirements. Transformers, Accelerate, Gradio and Pillow are pinned. ComfyUI's remaining transitive dependencies use its upstream constraints; the built image records the resolved set at `/app/installed-dependencies.txt`. This is not a complete transitive lockfile. Custom nodes are included in the image; no node-manager install step is needed.
+RunPod PyTorch/CUDA base, ComfyUI source, Diffusers source and the official model revision are version pinned in Dockerfile/requirements. Transformers, Accelerate, Gradio and Pillow are pinned. ComfyUI's remaining transitive dependencies use its upstream constraints; the built image records the resolved set at `/app/installed-dependencies.txt`. This is not a complete transitive lockfile. Custom nodes are included in the image; no node-manager install step is needed.
 
-The build runs `pip check`, eight mocked unit tests and real HTTP startup checks for Gradio and CPU-mode ComfyUI, including the four API workflow schemas. These checks do not download weights or test GPU inference. A failing check stops publication. The shared engine validates inputs, serializes inference, reports missing GPU/download/disk errors, clears its pipeline after OOM, and retains tracebacks in Pod logs. A failed request is returned through ComfyUI/Gradio; there is no silent substitution or automatic paid restart.
+The build runs `pip check`, nine mocked unit tests and real HTTP startup checks for Gradio and CPU-mode ComfyUI, including queuing all four API workflows and checking their missing-GPU errors. These checks do not download weights or test GPU inference. A failing check stops publication. The shared engine validates inputs, serializes inference, reports missing GPU/download/disk errors, clears its pipeline after OOM, and retains tracebacks in Pod logs. A failed request is returned through ComfyUI/Gradio; there is no silent substitution or automatic paid restart.
 
 GitHub Actions builds/pushes `linux/amd64` images on a `v*` tag. The template uses a version tag. A public Pod template only requires a public image and public template configuration; this public GitHub repo supplies source, builds and documentation.
 
