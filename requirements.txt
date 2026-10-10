@@ -1,0 +1,5 @@
+diffusers @ https://github.com/huggingface/diffusers/archive/85c9fa4caee33d1c5b473395784471d2d7957c1b.zip
+transformers>=5.17.0,<6.0
+accelerate>=1.0,<2.0
+gradio>=5.0,<6.0
+pillow>=10.0,<13.0

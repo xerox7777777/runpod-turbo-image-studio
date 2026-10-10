@@ -1,0 +1,9 @@
+This repository contains application code only. It does not include model weights.
+
+The application downloads Qwen/Qwen-Image-2.1-Turbo from its official Hugging Face
+repository when first used. The model is licensed separately under the Qwen Research
+License Agreement: https://huggingface.co/Qwen/Qwen-Image-2.1/blob/main/LICENSE
+
+The Qwen Research License Agreement limits use to non-commercial research or
+evaluation purposes unless a separate commercial license is obtained. Review and
+accept the model's terms before using or redistributing the model materials.
