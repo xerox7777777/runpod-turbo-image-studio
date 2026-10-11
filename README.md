@@ -2,7 +2,7 @@
 
 Community **Pod** template for the official `Qwen/Qwen-Image-2.1-Turbo` checkpoint. ComfyUI is the default interface. It uses our two custom nodes to call Qwen's official Diffusers pipeline and saved Turbo schedule, with KV caching. Model weights download directly from Qwen; no third-party checkpoint or LoRA is included.
 
-**Validation status:** v0.2.1 completed two real generations and one input-image edit on an A40 (48 GB GPU class, 50 GB allocated system RAM), 2026-10-10. The edit changed a red boat to yellow while retaining the scene. Measured inference: 33.097 seconds square generation, 30.679 seconds landscape generation, 36.142 seconds editing; first model download/load added 21.272 seconds on this host. These are examples, not performance guarantees. v0.2.3 was also tested on a fresh A40 with portrait generation, uploaded-image editing, Unicode/multiline prompts, pending cancellation and repeated-request caching. v0.2.5 adds denoising progress and cancellation at step boundaries; GPU verification results will be recorded after testing.
+**Validation status:** v0.2.1 completed two real generations and one input-image edit on an A40 (48 GB GPU class, 50 GB allocated system RAM), 2026-10-10. The edit changed a red boat to yellow while retaining the scene. Measured inference: 33.097 seconds square generation, 30.679 seconds landscape generation, 36.142 seconds editing; first model download/load added 21.272 seconds on this host. These are examples, not performance guarantees. v0.2.3 was also tested on a fresh A40 with portrait generation, uploaded-image editing, Unicode/multiline prompts, pending cancellation and repeated-request caching. v0.2.6 passed real A40 generation, uploaded-image editing, eight-step ComfyUI progress, active cancellation and generation after cancellation. Cancellation stopped inside the Turbo node in 1.922 seconds after interrupt, with no canceled PNG saved. The next request reloaded the pipeline (1.394 seconds) and succeeded. The red-to-blue mug edit retained the composition. These timings are examples, not guarantees.
 
 ## Start and use
 
@@ -52,6 +52,14 @@ The model's [Qwen Research License Agreement](https://huggingface.co/Qwen/Qwen-I
 
 ## ComfyUI user-flow notes
 
-On first opening, close ComfyUI's generic Templates gallery, open the Workflows sidebar, and double-click one of this template's saved workflows. The generic catalog may contain other Qwen models that are not this Turbo workflow. Upload/select an image in LoadImage before running image-edit. Identical inputs and seed can reuse ComfyUI's cache; change the seed to generate a fresh result. v0.2.5 reports denoising progress and checks Cancel at step boundaries. Cancellation is not instantaneous during a GPU operation or initial loading; an interrupted pipeline is cleared so the next request reloads it.
+On first opening, close ComfyUI's generic Templates gallery, open the Workflows sidebar, and double-click one of this template's saved workflows. The generic catalog may contain other Qwen models that are not this Turbo workflow. Upload/select an image in LoadImage before running image-edit. Identical inputs and seed can reuse ComfyUI's cache; change the seed to generate a fresh result. v0.2.6 reports denoising progress and checks Cancel at step boundaries. Cancellation is not instantaneous during a GPU operation or initial loading; an interrupted pipeline is cleared so the next request reloads it.
 
 The direct public deployment link works, but Hub Community search did not show this new template during our 2026-10-10 check. Share the direct link; search discoverability is not yet confirmed.
+
+## Tested edit example
+
+Prompt: Change the red coffee mug to a blue coffee mug. Keep the table and composition unchanged. A40, 512×512; results vary.
+
+| Generated input | Edited output |
+| --- | --- |
+| ![Red mug input](examples/mug-before.png) | ![Blue mug edit](examples/mug-after.png) |
