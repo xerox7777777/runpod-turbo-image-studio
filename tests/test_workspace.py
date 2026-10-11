@@ -72,6 +72,11 @@ class WorkspaceTests(unittest.TestCase):
     def test_logs_redact_token(self):
         self.assertEqual(startup.safe_log('url?token=secret-token', 'secret-token'), 'url?token=[redacted]')
 
+    def test_proxy_origin_is_specific_to_this_pod(self):
+        self.assertEqual(startup.proxy_origin('build-smoke'), 'https://build-smoke-8888.proxy.runpod.net')
+        self.assertEqual(startup.proxy_origin(''), '')
+        self.assertEqual(startup.proxy_origin('evil.example/'), '')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,6 +9,8 @@ import time
 import urllib.request
 import urllib.error
 import signal
+import http.cookiejar
+import urllib.parse
 from PIL import Image
 
 def check(command, url, verify, env=None):
@@ -51,6 +53,26 @@ def studio_verify(data):
     assert 'ComfyUI' in [item['name'] for item in root['content']]
     checkpoint_folder=jupyter_request('/api/contents/ComfyUI/models/checkpoints')
     assert isinstance(checkpoint_folder,dict) and checkpoint_folder['type']=='directory',checkpoint_folder
+    cookies=http.cookiejar.CookieJar()
+    browser=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
+    login_url='http://127.0.0.1:8888/login?next=%2Flab'
+    proxy_host='internal-proxy.test:8888'
+    with browser.open(urllib.request.Request(login_url,headers={'Host':proxy_host}),timeout=10) as response:
+        assert b'Password or token' in response.read()
+    xsrf=next(cookie.value for cookie in cookies if cookie.name=='_xsrf')
+    login_body=urllib.parse.urlencode({'_xsrf':xsrf,'password':SMOKE_TOKEN}).encode()
+    origin='https://build-smoke-8888.proxy.runpod.net'
+    headers={'Host':proxy_host,'Origin':origin,'Content-Type':'application/x-www-form-urlencoded'}
+    with browser.open(urllib.request.Request(login_url,data=login_body,headers=headers),timeout=10) as response:
+        assert '/lab' in response.geturl() and b'JupyterLab' in response.read()
+    headers['Origin']='https://unrelated.example'
+    try:
+        browser.open(urllib.request.Request(login_url,data=login_body,headers=headers),timeout=10)
+    except urllib.error.HTTPError as error:
+        assert error.code in (403,404),error.code
+    else:
+        raise AssertionError('Unrelated browser origin was accepted')
+    print('PASS browser login with rewritten proxy Host; unrelated origin rejected; Lab frontend served',flush=True)
     for token in ('', 'incorrect-token'):
         try:
             jupyter_request('/api/status',token=token)
@@ -148,7 +170,7 @@ def comfy_verify(data):
     print('PASS four workflow API node/input schemas',flush=True)
 
 env=dict(os.environ, OUTPUT_DIR=str(SMOKE_WORKSPACE/'outputs'), WORKSPACE_DIR=str(SMOKE_WORKSPACE),
-         JUPYTER_PASSWORD=SMOKE_TOKEN, CUDA_VISIBLE_DEVICES='')
+         JUPYTER_PASSWORD=SMOKE_TOKEN, CUDA_VISIBLE_DEVICES='', RUNPOD_POD_ID='build-smoke')
 STUDIO_PID=None
 # Capture the supervisor PID for the controlled service-crash test.
 original_popen=subprocess.Popen

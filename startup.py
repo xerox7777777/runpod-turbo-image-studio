@@ -16,13 +16,19 @@ from pathlib import Path
 from workspace import prepare, inside
 
 APP = Path(__file__).resolve().parent
-STATE = {'version': 'v0.3.2', 'comfyui': 'starting', 'jupyter': 'starting',
+STATE = {'version': 'v0.3.3', 'comfyui': 'starting', 'jupyter': 'starting',
          'message': 'Preparing workspace. Model downloads begin only on the first queued request.'}
 STOP = threading.Event()
 
 
 def safe_log(text, token):
     return text.replace(token, '[redacted]') if token else text
+
+
+def proxy_origin(pod_id):
+    if re.fullmatch(r'[a-z0-9-]{1,64}', pod_id):
+        return 'https://'+pod_id+'-8888.proxy.runpod.net'
+    return ''
 
 
 def probe(url, token=None):
@@ -89,7 +95,8 @@ def main():
     config = {'IdentityProvider': {'token': token}, 'ServerApp': {
         'ip': '0.0.0.0', 'port': 8888, 'port_retries': 0, 'root_dir': str(workspace),
         'allow_root': True, 'open_browser': False, 'allow_remote_access': True,
-        'trust_xheaders': True, 'jpserver_extensions': {'jupyter_workspace_routes': True}},
+        'trust_xheaders': True, 'allow_origin': proxy_origin(os.environ.get('RUNPOD_POD_ID', '')),
+        'jpserver_extensions': {'jupyter_workspace_routes': True}},
         'FileContentsManager': {'delete_to_trash': True}}
     config_path = Path(tempfile.gettempdir())/('turbo-jupyter-'+str(os.getpid())+'.json')
     fd = os.open(config_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
