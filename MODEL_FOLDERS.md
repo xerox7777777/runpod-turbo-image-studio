@@ -22,11 +22,7 @@ directly into the matching folder, rather than uploading a multi-GB file through
 the browser. Verify the publisher, license, filename, and format before downloading.
 Refresh the ComfyUI page after adding a model; use a workflow compatible with it.
 
-The bundled OfficialTurbo nodes use the pinned official Diffusers checkpoint in the
-Hugging Face cache. Putting a different checkpoint or LoRA in a model folder does
-not change those nodes. Additional models use ComfyUI's standard loader nodes and
-their own compatible workflows. This release does not install ComfyUI-Manager or
-automatically execute third-party installation scripts.
+The modular Turbo workflows include **TurboLoraLoader** and PEFT. Select a compatible Qwen Image 2.1 transformer safetensors adapter from `models/loras`; None is the default. LoRAs for older architectures may fail to load. The model checkpoint remains the pinned official Turbo checkpoint. Other models use their own compatible native workflows. ComfyUI-Manager is installed and enabled. See TURBO_WORKFLOWS.md for settings and compatibility.
 
 Only files on a volume mounted at `/workspace` persist when container storage is
 cleared. With no volume, these folders are temporary. Download your outputs before

@@ -16,7 +16,7 @@ from pathlib import Path
 from workspace import prepare, inside
 
 APP = Path(__file__).resolve().parent
-STATE = {'version': 'v0.3.3', 'comfyui': 'starting', 'jupyter': 'starting',
+STATE = {'version': 'v0.4.0', 'comfyui': 'starting', 'jupyter': 'starting',
          'message': 'Preparing workspace. Model downloads begin only on the first queued request.'}
 STOP = threading.Event()
 
@@ -120,7 +120,7 @@ def main():
             comfy = prepare(workspace, Path('/opt/ComfyUI'), APP)
             command = [sys.executable, '-u', str(comfy/'main.py'), '--listen', os.environ.get('COMFY_LISTEN', '0.0.0.0'),
                        '--port', '8188', '--user-directory', str(comfy/'user'), '--input-directory', str(comfy/'input'),
-                       '--output-directory', str(comfy/'output'), '--disable-auto-launch']
+                       '--output-directory', str(comfy/'output'), '--disable-auto-launch', '--enable-manager']
             if args.cpu:
                 command.append('--cpu')
             services['comfyui'] = launch('comfyui', command, logs, token)

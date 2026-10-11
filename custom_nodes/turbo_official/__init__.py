@@ -72,3 +72,115 @@ class TurboEdit(TurboGenerate):
 
 NODE_CLASS_MAPPINGS = {"OfficialTurboGenerate": TurboGenerate, "OfficialTurboEdit": TurboEdit}
 NODE_DISPLAY_NAME_MAPPINGS = {"OfficialTurboGenerate": "Official Qwen 2.1 Turbo Generate", "OfficialTurboEdit": "Official Qwen 2.1 Turbo Edit"}
+
+
+class TurboModel:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required':{'checkpoint':([engine.MODEL_ID],), 'precision':(['bfloat16'],), 'offload':(['model_cpu_offload'],)}}
+    RETURN_TYPES=('TURBO_MODEL',)
+    FUNCTION='configure'
+    CATEGORY='Turbo Image Studio/Workflow'
+    def configure(self,checkpoint,precision,offload):
+        if (checkpoint,precision,offload)!=(engine.MODEL_ID,'bfloat16','model_cpu_offload'):
+            raise ValueError('Use the pinned official Turbo checkpoint, BF16 and model CPU offload.')
+        return ({'checkpoint':checkpoint,'precision':precision,'offload':offload},)
+
+
+class TurboLora:
+    @classmethod
+    def INPUT_TYPES(cls):
+        import folder_paths
+        names=[n for n in folder_paths.get_filename_list('loras') if n.lower().endswith('.safetensors')]
+        return {'required':{'model':('TURBO_MODEL',),'lora_name':(['None']+names,),
+                            'strength':('FLOAT',{'default':1.0,'min':-2.0,'max':2.0,'step':0.05})}}
+    RETURN_TYPES=('TURBO_MODEL',)
+    FUNCTION='configure'
+    CATEGORY='Turbo Image Studio/Workflow'
+    @classmethod
+    def IS_CHANGED(cls,model,lora_name,strength):
+        if lora_name=='None': return (lora_name,strength)
+        import folder_paths
+        p=Path(folder_paths.get_full_path_or_raise('loras',lora_name))
+        return (lora_name,strength,p.stat().st_mtime_ns,p.stat().st_size)
+    def configure(self,model,lora_name,strength):
+        result=dict(model)
+        result.update(lora_path=None,lora_strength=strength)
+        if lora_name!='None':
+            import folder_paths
+            path=Path(folder_paths.get_full_path_or_raise('loras',lora_name)).resolve()
+            roots=folder_paths.get_folder_paths('loras')
+            if path.suffix.lower()!='.safetensors' or not any(path.is_relative_to(Path(r).resolve()) for r in roots):
+                raise ValueError('LoRA must be a safetensors file inside a configured LoRA folder.')
+            result['lora_path']=str(path)
+        return (result,)
+
+
+class TurboPrompt:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required':{'prompt':('STRING',{'multiline':True,'default':'A sailboat on a calm lake at sunrise'}),
+                            'negative_prompt':('STRING',{'multiline':True,'default':''})}}
+    RETURN_TYPES=('TURBO_CONDITIONING',)
+    FUNCTION='configure'
+    CATEGORY='Turbo Image Studio/Workflow'
+    def configure(self,prompt,negative_prompt):
+        if not prompt.strip(): raise ValueError('Enter a prompt first.')
+        return ({'prompt':prompt,'negative_prompt':negative_prompt},)
+
+
+class TurboSampling:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required':{'schedule':(['official_8_steps','experimental_linear','experimental_custom'],),
+            'steps':('INT',{'default':8,'min':1,'max':50}),
+            'cfg':('FLOAT',{'default':1.0,'min':1.0,'max':10.0,'step':0.1}),
+            'use_kv_cache':('BOOLEAN',{'default':True}),
+            'custom_sigmas':('STRING',{'multiline':True,'default':'[1.0, 0.875, 0.75, 0.625, 0.5, 0.375, 0.25, 0.125]'})}}
+    RETURN_TYPES=('TURBO_SAMPLING',)
+    FUNCTION='configure'
+    CATEGORY='Turbo Image Studio/Workflow'
+    def configure(self,schedule,steps,cfg,use_kv_cache,custom_sigmas):
+        # CFG/negative-prompt compatibility is checked when inputs meet in Sampler.
+        engine.sampling_options(schedule,steps,custom_sigmas,cfg,'validation' if cfg>1 else '',use_kv_cache)
+        return ({'schedule':schedule,'steps':steps,'cfg':cfg,'use_kv_cache':use_kv_cache,'custom_sigmas':custom_sigmas},)
+
+
+class TurboSampler(TurboGenerate):
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required':{'model':('TURBO_MODEL',),'conditioning':('TURBO_CONDITIONING',),'sampling':('TURBO_SAMPLING',),
+                            'width':('INT',{'default':1024,'min':512,'max':2752,'step':16}),
+                            'height':('INT',{'default':1024,'min':512,'max':2752,'step':16}),
+                            'seed':('INT',{'default':42,'min':0,'max':2147483647})},
+                'optional':{'image':('IMAGE',)}}
+    CATEGORY='Turbo Image Studio/Workflow'
+    def generate(self,model,conditioning,sampling,width,height,seed,image=None):
+        source=None
+        if image is not None:
+            if image.ndim!=4 or image.shape[0]!=1: raise ValueError('Use one input image per edit request.')
+            source=Image.fromarray((image[0].detach().cpu().clamp(0,1).numpy()*255).round().astype(np.uint8))
+        if model.get('checkpoint')!=engine.MODEL_ID: raise ValueError('This sampler requires the official Turbo model configuration.')
+        return self.convert(engine.run(conditioning['prompt'],width,height,seed,source,
+            step_callback=self.step_callback(),negative_prompt=conditioning['negative_prompt'],**sampling,
+            lora_path=model.get('lora_path'),lora_strength=model.get('lora_strength',1.0)))
+
+
+class TurboRunDetails:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required':{'details':('STRING',{'forceInput':True})}}
+    RETURN_TYPES=()
+    OUTPUT_NODE=True
+    FUNCTION='show'
+    CATEGORY='Turbo Image Studio/Workflow'
+    def show(self,details): return {'ui':{'text':[details]}}
+
+
+NODE_CLASS_MAPPINGS.update({'TurboModelConfig':TurboModel,'TurboLoraLoader':TurboLora,'TurboPrompt':TurboPrompt,
+                          'TurboSamplingSettings':TurboSampling,'TurboSampler':TurboSampler,'TurboRunDetails':TurboRunDetails})
+NODE_DISPLAY_NAME_MAPPINGS.update({'TurboModelConfig':'Official Turbo Model / Precision',
+    'TurboLoraLoader':'Qwen 2.1 Transformer LoRA (optional)', 'TurboPrompt':'Turbo Positive / Negative Prompt',
+    'TurboSamplingSettings':'Turbo Schedule / Steps / CFG / KV Cache', 'TurboSampler':'Turbo Generate or Edit Sampler',
+    'TurboRunDetails':'Actual Turbo Run Settings'})
+WEB_DIRECTORY='./web'

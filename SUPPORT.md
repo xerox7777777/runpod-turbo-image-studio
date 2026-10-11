@@ -19,9 +19,13 @@ Jupyter login behind the proxy previously rejected the external Origin because R
 
 ## Models and storage
 
-Open [MODEL_FOLDERS.md](MODEL_FOLDERS.md) or `/workspace/START_HERE.ipynb`. Upload small files in Jupyter; download large models directly through its Terminal. Standard ComfyUI models must use compatible workflows. The official Turbo nodes do not automatically load checkpoints/LoRAs added to other folders. Custom-node requirements are not automatically installed.
+Open [MODEL_FOLDERS.md](MODEL_FOLDERS.md) or `/workspace/START_HERE.ipynb`. Upload small files in Jupyter; download large models directly through its Terminal. Standard ComfyUI models must use compatible workflows. The official Turbo nodes do not automatically load checkpoints/LoRAs added to other folders. Manager is bundled for additional node management. All bundled workflow dependencies are already installed.
 
 A volume mounted at `/workspace` preserves files. Without one, they are temporary. Download original outputs before stopping; volume storage can still bill after GPU compute stops. An empty cache does not prevent the interfaces from opening; the first queued Turbo request downloads official weights.
+
+## Turbo settings and adapters
+
+See [TURBO_WORKFLOWS.md](TURBO_WORKFLOWS.md). Official schedule requires eight steps; select an experimental schedule to vary them. CFG above one needs a negative prompt. LoRA files must match Qwen Image 2.1 transformer architecture. Select None to run the original checkpoint. Native KSampler and LoRA Loader do not accept the Turbo pipeline handles.
 
 ## Inference errors
 

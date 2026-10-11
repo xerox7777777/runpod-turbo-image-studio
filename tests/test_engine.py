@@ -16,6 +16,9 @@ import engine
 
 class FakePipeline:
     calls = []
+    def load_lora_weights(self,*args,**kwargs): self.adapter_loaded=True
+    def set_adapters(self,*args,**kwargs): self.adapter_strength=kwargs['adapter_weights']
+    def unload_lora_weights(self): self.adapter_loaded=False
     def enable_model_cpu_offload(self):
         self.offload_enabled = True
     def __call__(self, **kwargs):
@@ -49,6 +52,40 @@ class EngineTests(unittest.TestCase):
         self.assertTrue(FakePipeline.calls[0]['use_kv_cache'])
         self.assertNotIn('num_inference_steps', FakePipeline.calls[0])
         self.assertNotIn('sigmas', FakePipeline.calls[0])
+
+    def test_experimental_steps_and_metadata(self):
+        _,_,details=engine.run('boat',512,512,42,schedule='experimental_linear',steps=4,use_kv_cache=False)
+        self.assertEqual(FakePipeline.calls[-1]['sigmas'],[1.0,0.75,0.5,0.25])
+        self.assertFalse(FakePipeline.calls[-1]['use_kv_cache'])
+        self.assertEqual(json.loads(details)['requested_steps'],4)
+
+    def test_sampling_rejects_ignored_or_bad_controls(self):
+        for kwargs in [{'steps':4},{'schedule':'bad'},{'steps':True},{'cfg':float('nan')},{'cfg':2},
+                       {'schedule':'experimental_custom','custom_sigmas':'bad'},
+                       {'schedule':'experimental_custom','steps':2,'custom_sigmas':'[1,0]'},
+                       {'schedule':'experimental_custom','steps':2,'custom_sigmas':'[0.5,1]'}]:
+            with self.assertRaises(ValueError): engine.run('boat',512,512,42,**kwargs)
+
+    def test_custom_sigmas_and_cfg_reach_pipeline(self):
+        engine.run('boat',512,512,42,schedule='experimental_custom',steps=3,custom_sigmas='[1,0.6,0.2]',cfg=2,negative_prompt='blurry')
+        self.assertEqual(FakePipeline.calls[-1]['sigmas'],[1,0.6,0.2])
+        self.assertEqual(FakePipeline.calls[-1]['true_cfg_scale'],2)
+        self.assertEqual(FakePipeline.calls[-1]['negative_prompt'],'blurry')
+
+    def test_lora_does_not_leak_to_next_request(self):
+        path=Path(self.tmp)/'adapter.safetensors';path.write_bytes(b'fixture')
+        pipeline=engine._pipeline
+        engine.run('boat',512,512,42,lora_path=path,lora_strength=0.5)
+        self.assertTrue(pipeline.adapter_loaded)
+        self.assertEqual(pipeline.adapter_strength,0.5)
+        engine.run('boat',512,512,43)
+        self.assertFalse(pipeline.adapter_loaded)
+
+    def test_bad_lora_and_zero_strength(self):
+        with self.assertRaises(ValueError): engine.run('boat',512,512,42,lora_path='/missing.safetensors')
+        path=Path(self.tmp)/'adapter.safetensors';path.write_bytes(b'fixture')
+        engine.run('boat',512,512,42,lora_path=path,lora_strength=0)
+        self.assertFalse(getattr(engine._pipeline,'adapter_loaded',False))
 
     def test_edit_passes_rgba(self):
         engine.run("sunset", 512, 512, 12, Image.new('RGB', (32, 32)))

@@ -46,6 +46,9 @@ def prepare(workspace, baked, app):
         inside(workspace, alias).mkdir(parents=True, exist_ok=True)
     workflow_dir = inside(workspace, comfy/'user'/'default'/'workflows')
     workflow_dir.mkdir(parents=True, exist_ok=True)
+    example = app/'examples'/'mug-before.png'
+    if example.exists() and not (comfy/'input'/'example-red-mug.png').exists():
+        shutil.copy2(example,inside(workspace,comfy/'input'/'example-red-mug.png'))
     for source in (app/'workflows').glob('*.json'):
         dest = inside(workspace, workflow_dir/source.name)
         if not dest.exists():
@@ -56,15 +59,19 @@ def prepare(workspace, baked, app):
     managed = [(app/'engine.py', comfy/'engine.py'),
                (app/'request_guard.py', comfy/'request_guard.py'),
                (app/'custom_nodes'/'turbo_official'/'__init__.py', node/'__init__.py')]
+    managed.extend((source,node/source.relative_to(app/'custom_nodes'/'turbo_official'))
+                   for source in (app/'custom_nodes'/'turbo_official'/'web').glob('*.js'))
     for source, dest in managed:
         inside(workspace, dest)
+        dest.parent.mkdir(parents=True,exist_ok=True)
         if dest.exists() and dest.read_bytes() != source.read_bytes():
             backup = inside(workspace, workspace/'backups'/dest.relative_to(comfy))
             backup.parent.mkdir(parents=True, exist_ok=True)
             if not backup.exists():
                 shutil.copy2(dest, backup)
         shutil.copy2(source, dest)
-    for name in ('START_HERE.ipynb', 'MODEL_FOLDERS.md'):
+    for name in ('START_HERE.ipynb', 'MODEL_FOLDERS.md', 'TURBO_WORKFLOWS.md', 'Turbo-Workflow-Guide-v0.4.ipynb'):
+        if not (app/name).exists(): continue
         destination = inside(workspace, workspace/name)
         if not destination.exists():
             shutil.copy2(app/name, destination)
