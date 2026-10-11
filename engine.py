@@ -26,13 +26,13 @@ def validate(prompt, width, height, seed):
     if not isinstance(prompt, str) or not prompt.strip():
         raise ValueError("Enter a prompt first.")
     for label, value in (("Width", width), ("Height", height)):
-        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or int(value) != value or value < 512 or value > 2752 or value % 16:
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or (isinstance(value, float) and not math.isfinite(value)) or int(value) != value or value < 512 or value > 2752 or value % 16:
             raise ValueError(f"{label} must be 512–2752 and divisible by 16.")
-    if isinstance(seed, bool) or not isinstance(seed, (int, float)) or not math.isfinite(seed) or int(seed) != seed or seed < -1 or seed > 2147483647:
+    if isinstance(seed, bool) or not isinstance(seed, (int, float)) or (isinstance(seed, float) and not math.isfinite(seed)) or int(seed) != seed or seed < -1 or seed > 2147483647:
         raise ValueError("Seed must be -1 (random) or 0–2147483647.")
 
 
-def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=None):
+def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=None, step_callback=None):
     global _pipeline
     validate(prompt, width, height, seed)
     if source_image is not None and not isinstance(source_image, Image.Image):
@@ -55,6 +55,8 @@ def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=No
                 progress(0.15, desc="Running the checkpoint's saved Turbo schedule")
             kwargs = dict(prompt=prompt.strip(), width=int(width), height=int(height),
                           use_kv_cache=True, generator=torch.Generator("cpu").manual_seed(actual_seed))
+            if step_callback is not None:
+                kwargs["callback_on_step_end"] = step_callback
             if source_image is not None:
                 if not isinstance(source_image, Image.Image):
                     raise ValueError("Input image must be a decoded image.")
@@ -82,5 +84,11 @@ def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=No
             log.exception("Model or output I/O failed")
             raise RuntimeError("Download/cache/output failed. Check free disk space, Hugging Face connectivity and permissions; cached downloads resume on retry. See Pod logs and README.") from exc
         except Exception:
+            # An interrupted callback can leave offload/KV state unfinished.
+            # Reload on retry instead of reusing that partially completed state.
+            if step_callback is not None:
+                _pipeline = None
+                gc.collect()
+                torch.cuda.empty_cache()
             log.exception("Turbo request failed")
             raise

@@ -39,7 +39,21 @@ class TurboGenerate:
         return torch.from_numpy(pixels[None, :, :, :3].copy()), torch.from_numpy((1-pixels[None, :, :, 3]).copy()), details
 
     def generate(self, prompt, width, height, seed):
-        return self.convert(engine.run(prompt, width, height, seed))
+        return self.convert(engine.run(prompt, width, height, seed, step_callback=self.step_callback()))
+
+    @staticmethod
+    def step_callback():
+        try:
+            from comfy.utils import ProgressBar
+            from comfy.model_management import throw_exception_if_processing_interrupted
+        except ImportError:
+            return None  # Standalone engine unit tests do not install ComfyUI.
+        progress = ProgressBar(1)
+        def update(pipeline, step, timestep, tensors):
+            throw_exception_if_processing_interrupted()
+            progress.update_absolute(step + 1, len(pipeline.timesteps))
+            return tensors
+        return update
 
 
 class TurboEdit(TurboGenerate):
@@ -53,7 +67,7 @@ class TurboEdit(TurboGenerate):
         if image.ndim != 4 or image.shape[0] != 1:
             raise ValueError("Use one input image per edit request.")
         source = Image.fromarray((image[0].detach().cpu().clamp(0, 1).numpy()*255).round().astype(np.uint8))
-        return self.convert(engine.run(prompt, width, height, seed, source))
+        return self.convert(engine.run(prompt, width, height, seed, source, step_callback=self.step_callback()))
 
 
 NODE_CLASS_MAPPINGS = {"OfficialTurboGenerate": TurboGenerate, "OfficialTurboEdit": TurboEdit}

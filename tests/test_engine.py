@@ -4,6 +4,8 @@ import tempfile
 import unittest
 import concurrent.futures
 import time
+import sys
+from unittest.mock import Mock
 from pathlib import Path
 from unittest.mock import patch
 from types import SimpleNamespace
@@ -69,7 +71,7 @@ class EngineTests(unittest.TestCase):
     def test_unusual_invalid_inputs_before_loading(self):
         engine._pipeline = None
         with patch.object(engine.QwenImage21Pipeline, 'from_pretrained') as load:
-            for value in [None, True, '512', float('nan'), float('inf'), 512.5]:
+            for value in [None, True, '512', float('nan'), float('inf'), 512.5, 10**1000]:
                 with self.assertRaises(ValueError):
                     engine.run('x', value, 512, 0)
                 with self.assertRaises(ValueError):
@@ -122,6 +124,23 @@ class EngineTests(unittest.TestCase):
         with patch.object(engine.QwenImage21Pipeline,'from_pretrained',return_value=FakePipeline()):
             self.assertTrue(Path(engine.run('x',512,512,0)[1]).exists())
 
+    def test_step_callback_cancellation_resets_and_retry_succeeds(self):
+        class Cancelled(Exception):
+            pass
+        class CallbackPipeline(FakePipeline):
+            def __call__(self, **kwargs):
+                kwargs['callback_on_step_end'](self,0,0,{'latents':None})
+                return super().__call__(**kwargs)
+        def cancel(*args):
+            raise Cancelled('cancelled by user')
+        engine._pipeline = CallbackPipeline()
+        with self.assertRaises(Cancelled):
+            engine.run('x',512,512,0,step_callback=cancel)
+        self.assertIsNone(engine._pipeline)
+        self.assertEqual(list(Path(self.tmp).glob('*.png')),[])
+        with patch.object(engine.QwenImage21Pipeline,'from_pretrained',return_value=FakePipeline()):
+            self.assertTrue(Path(engine.run('x',512,512,0)[1]).exists())
+
     def test_oom_resets_pipeline(self):
         class OOM:
             def __call__(self, **kwargs):
@@ -155,6 +174,21 @@ class EngineTests(unittest.TestCase):
         mod.TurboEdit().generate('sunset',512,512,42,torch.zeros(1,32,32,3))
         with self.assertRaisesRegex(ValueError,'one input image'):
             mod.TurboEdit().generate('x',512,512,42,torch.zeros(2,32,32,3))
+
+    def test_comfy_progress_and_interrupt_callback(self):
+        spec=importlib.util.spec_from_file_location('turbo_callback_node', Path(__file__).resolve().parents[1]/'custom_nodes/turbo_official/__init__.py')
+        mod=importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        progress=Mock()
+        interrupt=Mock()
+        modules={'comfy':SimpleNamespace(), 'comfy.utils':SimpleNamespace(ProgressBar=Mock(return_value=progress)),
+                 'comfy.model_management':SimpleNamespace(throw_exception_if_processing_interrupted=interrupt)}
+        with patch.dict(sys.modules,modules):
+            callback=mod.TurboGenerate.step_callback()
+            tensors={'latents':'unchanged'}
+            self.assertIs(callback(SimpleNamespace(timesteps=range(8)),2,0,tensors),tensors)
+        interrupt.assert_called_once_with()
+        progress.update_absolute.assert_called_once_with(3,8)
 
 if __name__ == '__main__':
     unittest.main()
