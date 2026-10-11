@@ -11,6 +11,12 @@ Report reproducible wrapper/workflow/startup bugs in [GitHub Issues](https://git
 5. Existing unrelated `/workspace/ComfyUI` is not overwritten. Back up/rename it through Jupyter and use this template's pinned bundle, or deploy with an empty workspace. A partly copied first-boot installation without its revision marker is also reported as a conflict.
 6. If both services are unavailable, inspect container startup logs in RunPod. If the host cannot restart because its GPU was rented by someone else, use RunPod migration or choose another available host; application changes cannot create host capacity.
 
+## Proxy 403 and Jupyter login
+
+A proxy HTTP 403 is different from an application still starting. During v0.3.3 testing, RunPod/Cloudflare returned `error code: 1010` for the default Python client signature and accepted a browser signature for the same endpoint. A normal browser opened both applications. This does not establish the exact cause of every Chrome 403; record the response, Pod ID, time and service readiness for RunPod platform support. See [Cloudflare error 1010](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/).
+
+Jupyter login behind the proxy previously rejected the external Origin because RunPod forwards an internal Host. v0.3.3 allows only that Pod’s exact Jupyter proxy origin, with token authentication and CSRF checks retained. Do not work around access errors by disabling authentication or allowing every origin. SSH tunneling remains an alternative when platform proxy access fails.
+
 ## Models and storage
 
 Open [MODEL_FOLDERS.md](MODEL_FOLDERS.md) or `/workspace/START_HERE.ipynb`. Upload small files in Jupyter; download large models directly through its Terminal. Standard ComfyUI models must use compatible workflows. The official Turbo nodes do not automatically load checkpoints/LoRAs added to other folders. Custom-node requirements are not automatically installed.
