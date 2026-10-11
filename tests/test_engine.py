@@ -33,6 +33,8 @@ class EngineTests(unittest.TestCase):
         self.output_patch.start()
         self.gpu = patch.object(engine.torch.cuda, "is_available", return_value=True)
         self.gpu.start()
+        self.memory = patch.object(engine.torch.cuda, 'mem_get_info', return_value=(1024**3,24*1024**3))
+        self.memory.start()
         engine._pipeline = FakePipeline()
         FakePipeline.calls.clear()
 
@@ -40,7 +42,28 @@ class EngineTests(unittest.TestCase):
         engine._pipeline = None
         self.output_patch.stop()
         self.gpu.stop()
+        self.memory.stop()
         # Temporary outputs are left in the ephemeral CI build filesystem.
+
+    def test_gpu_resident_loads_directly_to_cuda(self):
+        engine._pipeline = None
+        pipe = FakePipeline()
+        with patch.object(engine.QwenImage21Pipeline, 'from_pretrained', return_value=pipe) as loader:
+            _, _, details = engine.run('boat',512,512,42,memory_mode='gpu_resident')
+        self.assertEqual(loader.call_args.kwargs['device_map'],'cuda')
+        self.assertEqual(json.loads(details)['offload'],'gpu_resident')
+        self.assertFalse(hasattr(pipe,'offload_enabled'))
+
+    def test_auto_selects_resident_only_in_verified_envelope(self):
+        with patch.object(engine.torch.cuda,'mem_get_info',return_value=(48*1024**3,48*1024**3)):
+            for width,height,cfg,expected in [(1024,1024,1,'gpu_resident'),(2048,2048,1,'model_cpu_offload'),(512,512,2,'model_cpu_offload')]:
+                engine._pipeline=None
+                with patch.object(engine.QwenImage21Pipeline,'from_pretrained',return_value=FakePipeline()):
+                    _, _, details=engine.run('boat',width,height,42,cfg=cfg,negative_prompt='blurry' if cfg>1 else '')
+                self.assertEqual(json.loads(details)['offload'],expected)
+
+    def test_bad_memory_mode_rejected(self):
+        with self.assertRaises(ValueError):engine.run('boat',512,512,42,memory_mode='invalid')
 
     def test_generate_and_metadata(self):
         image, filename, details = engine.run("boat", 512, 512, 42)
@@ -211,6 +234,16 @@ class EngineTests(unittest.TestCase):
         mod.TurboEdit().generate('sunset',512,512,42,torch.zeros(1,32,32,3))
         with self.assertRaisesRegex(ValueError,'one input image'):
             mod.TurboEdit().generate('x',512,512,42,torch.zeros(2,32,32,3))
+
+    def test_saved_result_displays_original_without_creating_copy(self):
+        spec=importlib.util.spec_from_file_location('turbo_saved_node',Path(__file__).resolve().parents[1]/'custom_nodes/turbo_official/__init__.py')
+        mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+        _,filename,details=engine.run('boat',512,512,42)
+        with patch.dict(sys.modules,{'folder_paths':SimpleNamespace(get_output_directory=lambda:self.tmp)}):
+            result=mod.TurboSavedResult().show(details)
+            self.assertEqual(result['ui']['images'][0]['filename'],Path(filename).name)
+            self.assertEqual(len(list(Path(self.tmp).glob('*.png'))),1)
+            with self.assertRaises(ValueError):mod.TurboSavedResult().show(json.dumps({'output_filename':'../outside.png'}))
 
     def test_comfy_progress_and_interrupt_callback(self):
         spec=importlib.util.spec_from_file_location('turbo_callback_node', Path(__file__).resolve().parents[1]/'custom_nodes/turbo_official/__init__.py')

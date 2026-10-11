@@ -4,7 +4,7 @@
     "inputs": {
       "checkpoint": "Qwen/Qwen-Image-2.1-Turbo",
       "precision": "bfloat16",
-      "offload": "model_cpu_offload"
+      "offload": "auto"
     }
   },
   "2": {
@@ -56,13 +56,12 @@
     }
   },
   "6": {
-    "class_type": "SaveImage",
+    "class_type": "TurboSavedResult",
     "inputs": {
-      "images": [
+      "details": [
         "5",
-        0
-      ],
-      "filename_prefix": "Turbo/Turbo-Generation"
+        2
+      ]
     }
   },
   "7": {
@@ -71,15 +70,6 @@
       "details": [
         "5",
         2
-      ]
-    }
-  },
-  "8": {
-    "class_type": "PreviewImage",
-    "inputs": {
-      "images": [
-        "5",
-        0
       ]
     }
   }

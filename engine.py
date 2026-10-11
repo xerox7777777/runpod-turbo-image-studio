@@ -63,7 +63,7 @@ def sampling_options(schedule='official_8_steps', steps=8, custom_sigmas='', cfg
 
 def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=None, step_callback=None,
         schedule='official_8_steps', steps=8, custom_sigmas='', cfg=1.0, negative_prompt='', use_kv_cache=True,
-        lora_path=None, lora_strength=1.0):
+        lora_path=None, lora_strength=1.0, memory_mode='auto'):
     global _pipeline
     validate(prompt, width, height, seed)
     sampling = sampling_options(schedule,steps,custom_sigmas,cfg,negative_prompt,use_kv_cache)
@@ -77,16 +77,32 @@ def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=No
         raise ValueError("Input image must be a decoded image.")
     if not torch.cuda.is_available():
         raise RuntimeError("No CUDA GPU is available. Deploy on an NVIDIA GPU Pod; CPU mode only checks startup.")
+    if memory_mode not in ('auto', 'gpu_resident', 'model_cpu_offload'):
+        raise ValueError('Choose auto, gpu_resident or model_cpu_offload memory mode.')
     actual_seed = int(seed) if seed >= 0 else secrets.randbelow(2**31)
     with _lock:
         started = time.monotonic()
         try:
+            current_mode = getattr(_pipeline, '_turbo_memory_mode', 'model_cpu_offload') if _pipeline is not None else None
+            selected_mode = memory_mode
+            if selected_mode == 'auto':
+                free, total = torch.cuda.mem_get_info()
+                # Verified A40 envelope: BF16, <=1 MP, CFG 1, one input image.
+                # Larger workloads retain the established offload path.
+                enough = total >= 44 * 1024**3 and (current_mode == 'gpu_resident' or free >= 44 * 1024**3)
+                selected_mode = 'gpu_resident' if enough and width*height <= 1024*1024 and cfg == 1 else 'model_cpu_offload'
+            if _pipeline is not None and current_mode != selected_mode:
+                _pipeline = None
+                gc.collect()
+                torch.cuda.empty_cache()
             if _pipeline is None:
                 if progress:
                     progress(0.02, desc="Downloading/loading official checkpoint; first use can take several minutes")
-                candidate = QwenImage21Pipeline.from_pretrained(MODEL_ID, revision=MODEL_REVISION, dtype=torch.bfloat16)
-                # CPU offload lowers peak VRAM; no quantized or third-party weights.
-                candidate.enable_model_cpu_offload()
+                load_options = {'device_map': 'cuda'} if selected_mode == 'gpu_resident' else {}
+                candidate = QwenImage21Pipeline.from_pretrained(MODEL_ID, revision=MODEL_REVISION, dtype=torch.bfloat16, **load_options)
+                if selected_mode == 'model_cpu_offload':
+                    candidate.enable_model_cpu_offload()
+                candidate._turbo_memory_mode = selected_mode
                 _pipeline = candidate
             # Reset adapters on every request, including when the next workflow
             # selects None. No adapter state may leak between users/workflows.
@@ -125,10 +141,11 @@ def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=No
                             scheduler=type(_pipeline.scheduler).__name__ if hasattr(_pipeline,'scheduler') else 'FlowMatchEulerDiscreteScheduler',
                             requested_sigmas=sampling.get('sigmas'), saved_sigmas=list(getattr(getattr(_pipeline,'config',None),'sample_sigmas',[]) or []),
                             true_cfg_scale=float(cfg), negative_prompt=negative_prompt.strip(), use_kv_cache=use_kv_cache,
-                            dtype='bfloat16', offload='model_cpu_offload', lora=lora_path.name if lora_path else None,
+                            dtype='bfloat16', offload=selected_mode, requested_memory_mode=memory_mode, lora=lora_path.name if lora_path else None,
                             lora_strength=float(lora_strength) if lora_path else 0.0)
             OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
             output = OUTPUT_DIR / f"turbo_{metadata['mode']}_{uuid.uuid4().hex}.png"
+            metadata['output_filename'] = output.name
             png_info = PngImagePlugin.PngInfo()
             png_info.add_text("turbo_run", json.dumps(metadata))
             result.save(output, pnginfo=png_info)

@@ -44,3 +44,7 @@ Jupyter requires its per-Pod token. ComfyUI is unauthenticated by default; for p
 ## v0.4.1 upgrade and canvas controls
 
 Existing Pods do not automatically update when the public template changes. Save your files, then use the v0.4.1 image and the Turbo-prefixed modular workflows. Read [TURBO_WORKFLOWS.md](TURBO_WORKFLOWS.md) for controls. Zoom above 60% if ComfyUI hides canvas text. The loader was tested using a locally created zero-effect adapter; real adapter compatibility and visual quality are separate checks. See [validation](docs/testing-v0.4.1.md).
+
+## Slow Turbo generation
+
+Use a Turbo-Fast workflow and inspect Actual Run Settings: offload should say gpu_resident on the tested A40 at <=1 MP and CFG 1. model_cpu_offload moves components for each request and was measured around 30 seconds here. Auto falls back to offloading outside its tested envelope. A new image does not overwrite user-saved older workflow files; load the Fast versions. First loading/download is separate from inference.

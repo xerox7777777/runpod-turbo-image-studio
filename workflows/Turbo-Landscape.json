@@ -5,7 +5,7 @@
     {
       "id": 1,
       "type": "TurboModelConfig",
-      "title": "1 \u00b7 Official checkpoint / BF16 / CPU offload",
+      "title": "1 \u00b7 Official checkpoint / BF16 / memory mode",
       "pos": [
         30,
         50
@@ -34,7 +34,7 @@
       "widgets_values": [
         "Qwen/Qwen-Image-2.1-Turbo",
         "bfloat16",
-        "model_cpu_offload"
+        "auto"
       ]
     },
     {
@@ -189,10 +189,7 @@
         {
           "name": "image",
           "type": "IMAGE",
-          "links": [
-            5,
-            7
-          ],
+          "links": [],
           "slot_index": 0
         },
         {
@@ -205,6 +202,7 @@
           "name": "run_details",
           "type": "STRING",
           "links": [
+            5,
             6
           ],
           "slot_index": 2
@@ -222,8 +220,8 @@
     },
     {
       "id": 6,
-      "type": "SaveImage",
-      "title": "6 \u00b7 Save result",
+      "type": "TurboSavedResult",
+      "title": "6 \u00b7 Saved original RGBA result",
       "pos": [
         1300,
         50
@@ -237,18 +235,16 @@
       "mode": 0,
       "inputs": [
         {
-          "name": "images",
-          "type": "IMAGE",
+          "name": "details",
+          "type": "STRING",
           "link": 5
         }
       ],
       "outputs": [],
       "properties": {
-        "Node name for S&R": "SaveImage"
+        "Node name for S&R": "TurboSavedResult"
       },
-      "widgets_values": [
-        "Turbo/Turbo-Landscape"
-      ]
+      "widgets_values": []
     },
     {
       "id": 7,
@@ -275,34 +271,6 @@
       "outputs": [],
       "properties": {
         "Node name for S&R": "TurboRunDetails"
-      },
-      "widgets_values": []
-    },
-    {
-      "id": 8,
-      "type": "PreviewImage",
-      "title": "Preview result",
-      "pos": [
-        900,
-        450
-      ],
-      "size": [
-        350,
-        300
-      ],
-      "flags": {},
-      "order": 8,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 7
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "Node name for S&R": "PreviewImage"
       },
       "widgets_values": []
     },
@@ -367,10 +335,10 @@
     [
       5,
       5,
-      0,
+      2,
       6,
       0,
-      "IMAGE"
+      "STRING"
     ],
     [
       6,
@@ -379,14 +347,6 @@
       7,
       0,
       "STRING"
-    ],
-    [
-      7,
-      5,
-      0,
-      8,
-      0,
-      "IMAGE"
     ]
   ],
   "groups": [],

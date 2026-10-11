@@ -1,0 +1,364 @@
+{
+  "last_node_id": 9,
+  "last_link_id": 7,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "TurboModelConfig",
+      "title": "1 \u00b7 Official checkpoint / BF16 / memory mode",
+      "pos": [
+        30,
+        50
+      ],
+      "size": [
+        350,
+        220
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "TURBO_MODEL",
+          "type": "TURBO_MODEL",
+          "links": [
+            1
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "TurboModelConfig"
+      },
+      "widgets_values": [
+        "Qwen/Qwen-Image-2.1-Turbo",
+        "bfloat16",
+        "auto"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "TurboLoraLoader",
+      "title": "2 \u00b7 Optional compatible Qwen 2.1 LoRA",
+      "pos": [
+        30,
+        320
+      ],
+      "size": [
+        350,
+        220
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "TURBO_MODEL",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "TURBO_MODEL",
+          "type": "TURBO_MODEL",
+          "links": [
+            2
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "TurboLoraLoader"
+      },
+      "widgets_values": [
+        "None",
+        1.0
+      ]
+    },
+    {
+      "id": 3,
+      "type": "TurboPrompt",
+      "title": "3 \u00b7 Prompt and negative prompt",
+      "pos": [
+        430,
+        50
+      ],
+      "size": [
+        420,
+        260
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "TURBO_CONDITIONING",
+          "type": "TURBO_CONDITIONING",
+          "links": [
+            3
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "TurboPrompt"
+      },
+      "widgets_values": [
+        "A red ceramic coffee mug on a white table, clean product photograph",
+        ""
+      ]
+    },
+    {
+      "id": 4,
+      "type": "TurboSamplingSettings",
+      "title": "4 \u00b7 Official: 8 steps / CFG 1 / KV on",
+      "pos": [
+        430,
+        370
+      ],
+      "size": [
+        420,
+        290
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "TURBO_SAMPLING",
+          "type": "TURBO_SAMPLING",
+          "links": [
+            4
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "TurboSamplingSettings"
+      },
+      "widgets_values": [
+        "official_8_steps",
+        8,
+        1.0,
+        true,
+        "[1.0, 0.875, 0.75, 0.625, 0.5, 0.375, 0.25, 0.125]"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "TurboSampler",
+      "title": "5 \u00b7 Run generation or input-image edit",
+      "pos": [
+        900,
+        110
+      ],
+      "size": [
+        350,
+        220
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "TURBO_MODEL",
+          "link": 2
+        },
+        {
+          "name": "conditioning",
+          "type": "TURBO_CONDITIONING",
+          "link": 3
+        },
+        {
+          "name": "sampling",
+          "type": "TURBO_SAMPLING",
+          "link": 4
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0
+        },
+        {
+          "name": "alpha_mask",
+          "type": "MASK",
+          "links": [],
+          "slot_index": 1
+        },
+        {
+          "name": "run_details",
+          "type": "STRING",
+          "links": [
+            5,
+            6
+          ],
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "TurboSampler"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        42,
+        "fixed"
+      ]
+    },
+    {
+      "id": 6,
+      "type": "TurboSavedResult",
+      "title": "6 \u00b7 Saved original RGBA result",
+      "pos": [
+        1300,
+        50
+      ],
+      "size": [
+        350,
+        330
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "details",
+          "type": "STRING",
+          "link": 5
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "TurboSavedResult"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 7,
+      "type": "TurboRunDetails",
+      "title": "7 \u00b7 Actual settings, LoRA, timings",
+      "pos": [
+        1300,
+        440
+      ],
+      "size": [
+        500,
+        420
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "details",
+          "type": "STRING",
+          "link": 6
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "TurboRunDetails"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 9,
+      "type": "Note",
+      "title": "Read this first",
+      "pos": [
+        30,
+        610
+      ],
+      "size": [
+        360,
+        340
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "Note"
+      },
+      "widgets_values": [
+        "Official schedule needs steps=8. To try another count select experimental_linear; custom_sigmas needs exactly steps descending values, without terminal zero. Other schedules/CFG are experimental. Negative prompt is used only with CFG > 1. LoRA: None works immediately; upload a compatible Qwen Image 2.1 transformer adapter to models/loras and refresh. Older Qwen/Edit LoRAs may be incompatible. This graph uses typed Turbo pipeline handles, not native KSampler MODEL/LATENT. IMAGE outputs work with standard image nodes."
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "TURBO_MODEL"
+    ],
+    [
+      2,
+      2,
+      0,
+      5,
+      0,
+      "TURBO_MODEL"
+    ],
+    [
+      3,
+      3,
+      0,
+      5,
+      1,
+      "TURBO_CONDITIONING"
+    ],
+    [
+      4,
+      4,
+      0,
+      5,
+      2,
+      "TURBO_SAMPLING"
+    ],
+    [
+      5,
+      5,
+      2,
+      6,
+      0,
+      "STRING"
+    ],
+    [
+      6,
+      5,
+      2,
+      7,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.55,
+      "offset": [
+        480,
+        80
+      ]
+    }
+  },
+  "version": 0.4
+}

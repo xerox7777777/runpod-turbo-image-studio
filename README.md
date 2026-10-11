@@ -4,11 +4,11 @@
 
 ComfyUI generation and single-image editing with the official **Qwen/Qwen-Image-2.1-Turbo** checkpoint. Official weights download directly from Qwen on the first queued request. No third-party checkpoint or LoRA is included. Gradio is not included.
 
-## v0.4.1 modular workflows
+## v0.4.2 performance fix
 
-Zoom the canvas above 60% if node labels are hidden by ComfyUI’s rendering optimization. Open **Turbo-Generation**, **Turbo-Portrait**, **Turbo-Landscape** or **Turbo-Image-Edit**. The connected graph exposes model/precision/offload, LoRA selection/strength, prompts, schedule/steps/CFG/KV caching, resolution/seed, preview/save and actual run details. Manager and all nodes are preinstalled; a sample edit image is included. See [every control explained](TURBO_WORKFLOWS.md). Official default is eight steps, CFG 1 and KV caching. Experimental schedules require explicit sigmas; changing the step count alone never silently does nothing.
+Zoom the canvas above 60% if node labels are hidden by ComfyUI’s rendering optimization. Open **Turbo-Fast-Generation**, **Turbo-Fast-Portrait**, **Turbo-Fast-Landscape** or **Turbo-Fast-Image-Edit**. The connected graph exposes model/precision/memory mode, LoRA selection/strength, prompts, schedule/steps/CFG/KV caching, resolution/seed, preview/save and actual run details. Manager and all nodes are preinstalled; a sample edit image is included. See [every control explained](TURBO_WORKFLOWS.md). Official default is eight steps, CFG 1 and KV caching. Auto memory mode keeps the full official BF16 pipeline on a GPU with at least 44 GiB total/free VRAM for outputs up to 1 MP at CFG 1. Other workloads use CPU offloading; gpu_resident can be selected explicitly but needs enough memory. Verified on A40: generation 6.7–7.2 seconds and single-image editing 8.7–8.9 seconds at 1024×1024, excluding first model loading/download. The Fast graphs show/save one original RGBA result, without duplicate SaveImage/Preview outputs. Experimental schedules require explicit sigmas; changing the step count alone never silently does nothing.
 
-v0.4.1 passed 29 regression tests, CPU service checks, 19 Jupyter checks, and A40 tests for official generation, input-image editing, custom schedules, CFG, invalid settings, and real adapter loading/reset. Browser generation displayed actual settings. The LoRA integration test used a locally created zero-effect adapter; visual quality and compatibility with your chosen adapter are not yet verified. See [validation report](docs/testing-v0.4.1.md).
+v0.4.1 passed 29 regression tests, CPU service checks, 19 Jupyter checks, and A40 tests for official generation, input-image editing, custom schedules, CFG, invalid settings, and real adapter loading/reset. Browser generation displayed actual settings. The LoRA integration test used a locally created zero-effect adapter; visual quality and compatibility with your chosen adapter are not yet verified. See [previous validation report](docs/testing-v0.4.1.md) and [performance verification](docs/testing-v0.4.2.md).
 
 ## Open your Pod
 
@@ -55,11 +55,11 @@ Input/output/user folders point to the legacy `/workspace/inputs`, `/workspace/o
 
 Adding a checkpoint does **not** replace the official Turbo pipeline. Compatible adapters are selected using TurboLoraLoader in the modular graphs; copying a file alone does not enable it. Other models use standard ComfyUI loader nodes and their own workflows. ComfyUI-Manager 4.2.2 is bundled and enabled. Startup does not automatically run third-party installation scripts. Install extra node dependencies deliberately in Jupyter Terminal; packages installed on container storage must be reinstalled on a fresh container.
 
-The engine saves original RGBA PNGs and prompt/seed/dimension/timing JSON to `/workspace/outputs`; standard SaveImage also saves an RGB preview. Download originals to retain alpha. Prompt metadata is embedded in PNG/JSON files, so remove private content before sharing.
+The engine saves original RGBA PNGs and prompt/seed/dimension/timing JSON to `/workspace/outputs`; the Fast workflow displays that saved original directly. Download originals to retain alpha. Prompt metadata is embedded in PNG/JSON files, so remove private content before sharing.
 
 ## Resources, storage and access
 
-The tested configuration is an A40 (48 GB class GPU), 50 GB system RAM and 100 GB container disk; 64 GB RAM offers more headroom. The template now allocates 100 GB container disk to leave room for additional files. These are tested allocations, not measured minima or guarantees for other GPUs/resolutions. Turbo uses CPU offload.
+The tested configuration is an A40 (48 GB class GPU), 50 GB system RAM and 100 GB container disk; 64 GB RAM offers more headroom. The template now allocates 100 GB container disk to leave room for additional files. These are tested allocations, not measured minima or guarantees for other GPUs/resolutions. Turbo selects GPU residency for the verified A40 1 MP/CFG 1 envelope, with CPU offload for other auto-mode workloads.
 
 **Files persist only on durable storage.** Attach your own network volume or volume disk at `/workspace` for persistent models and files; a network volume must be in the GPU's data center. Without that mount, workspace files are temporary and can be wiped when the Pod stops/restarts. Download outputs before stopping. The template does not create a network volume automatically or share the author's storage. Each user pays for their own GPU and any storage they select. Stop your Pod when finished; stopped volume disks/network volumes can still bill.
 

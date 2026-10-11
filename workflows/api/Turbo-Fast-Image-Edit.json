@@ -1,0 +1,86 @@
+{
+  "1": {
+    "class_type": "TurboModelConfig",
+    "inputs": {
+      "checkpoint": "Qwen/Qwen-Image-2.1-Turbo",
+      "precision": "bfloat16",
+      "offload": "auto"
+    }
+  },
+  "2": {
+    "class_type": "TurboLoraLoader",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "lora_name": "None",
+      "strength": 1.0
+    }
+  },
+  "3": {
+    "class_type": "TurboPrompt",
+    "inputs": {
+      "prompt": "Change the red mug to blue. Keep the table and composition unchanged.",
+      "negative_prompt": ""
+    }
+  },
+  "4": {
+    "class_type": "TurboSamplingSettings",
+    "inputs": {
+      "schedule": "official_8_steps",
+      "steps": 8,
+      "cfg": 1.0,
+      "use_kv_cache": true,
+      "custom_sigmas": "[1.0, 0.875, 0.75, 0.625, 0.5, 0.375, 0.25, 0.125]"
+    }
+  },
+  "5": {
+    "class_type": "TurboSampler",
+    "inputs": {
+      "model": [
+        "2",
+        0
+      ],
+      "conditioning": [
+        "3",
+        0
+      ],
+      "sampling": [
+        "4",
+        0
+      ],
+      "width": 1024,
+      "height": 1024,
+      "seed": 42,
+      "image": [
+        "10",
+        0
+      ]
+    }
+  },
+  "6": {
+    "class_type": "TurboSavedResult",
+    "inputs": {
+      "details": [
+        "5",
+        2
+      ]
+    }
+  },
+  "7": {
+    "class_type": "TurboRunDetails",
+    "inputs": {
+      "details": [
+        "5",
+        2
+      ]
+    }
+  },
+  "10": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "example-red-mug.png"
+    }
+  }
+}

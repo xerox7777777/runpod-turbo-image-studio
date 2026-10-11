@@ -77,13 +77,13 @@ NODE_DISPLAY_NAME_MAPPINGS = {"OfficialTurboGenerate": "Official Qwen 2.1 Turbo 
 class TurboModel:
     @classmethod
     def INPUT_TYPES(cls):
-        return {'required':{'checkpoint':([engine.MODEL_ID],), 'precision':(['bfloat16'],), 'offload':(['model_cpu_offload'],)}}
+        return {'required':{'checkpoint':([engine.MODEL_ID],), 'precision':(['bfloat16'],), 'offload':(['auto','gpu_resident','model_cpu_offload'],)}}
     RETURN_TYPES=('TURBO_MODEL',)
     FUNCTION='configure'
     CATEGORY='Turbo Image Studio/Workflow'
     def configure(self,checkpoint,precision,offload):
-        if (checkpoint,precision,offload)!=(engine.MODEL_ID,'bfloat16','model_cpu_offload'):
-            raise ValueError('Use the pinned official Turbo checkpoint, BF16 and model CPU offload.')
+        if checkpoint != engine.MODEL_ID or precision != 'bfloat16' or offload not in ('auto','gpu_resident','model_cpu_offload'):
+            raise ValueError('Use the pinned official Turbo checkpoint, BF16 and a supported memory mode.')
         return ({'checkpoint':checkpoint,'precision':precision,'offload':offload},)
 
 
@@ -163,7 +163,7 @@ class TurboSampler(TurboGenerate):
         if model.get('checkpoint')!=engine.MODEL_ID: raise ValueError('This sampler requires the official Turbo model configuration.')
         return self.convert(engine.run(conditioning['prompt'],width,height,seed,source,
             step_callback=self.step_callback(),negative_prompt=conditioning['negative_prompt'],**sampling,
-            lora_path=model.get('lora_path'),lora_strength=model.get('lora_strength',1.0)))
+            lora_path=model.get('lora_path'),lora_strength=model.get('lora_strength',1.0),memory_mode=model.get('offload','auto')))
 
 
 class TurboRunDetails:
@@ -177,9 +177,29 @@ class TurboRunDetails:
     def show(self,details): return {'ui':{'text':[details]}}
 
 
-NODE_CLASS_MAPPINGS.update({'TurboModelConfig':TurboModel,'TurboLoraLoader':TurboLora,'TurboPrompt':TurboPrompt,
+class TurboSavedResult:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required': {'details': ('STRING', {'forceInput': True})}}
+    RETURN_TYPES = ()
+    OUTPUT_NODE = True
+    FUNCTION = 'show'
+    CATEGORY = 'Turbo Image Studio/Workflow'
+    def show(self, details):
+        import json
+        import folder_paths
+        filename = json.loads(details)['output_filename']
+        path = (engine.OUTPUT_DIR / filename).resolve()
+        output_root = Path(folder_paths.get_output_directory()).resolve()
+        if path.parent != engine.OUTPUT_DIR.resolve() or not path.is_file() or not path.is_relative_to(output_root):
+            raise ValueError('The saved Turbo image must be inside the ComfyUI output directory.')
+        relative = path.relative_to(output_root)
+        return {'ui': {'images': [{'filename': relative.name, 'subfolder': str(relative.parent) if relative.parent != Path('.') else '', 'type': 'output'}]}}
+
+
+NODE_CLASS_MAPPINGS.update({'TurboSavedResult':TurboSavedResult,'TurboModelConfig':TurboModel,'TurboLoraLoader':TurboLora,'TurboPrompt':TurboPrompt,
                           'TurboSamplingSettings':TurboSampling,'TurboSampler':TurboSampler,'TurboRunDetails':TurboRunDetails})
-NODE_DISPLAY_NAME_MAPPINGS.update({'TurboModelConfig':'Official Turbo Model / Precision',
+NODE_DISPLAY_NAME_MAPPINGS.update({'TurboSavedResult':'Saved Turbo Image (original RGBA)','TurboModelConfig':'Official Turbo Model / Precision',
     'TurboLoraLoader':'Qwen 2.1 Transformer LoRA (optional)', 'TurboPrompt':'Turbo Positive / Negative Prompt',
     'TurboSamplingSettings':'Turbo Schedule / Steps / CFG / KV Cache', 'TurboSampler':'Turbo Generate or Edit Sampler',
     'TurboRunDetails':'Actual Turbo Run Settings'})
