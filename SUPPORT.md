@@ -40,3 +40,7 @@ See [TURBO_WORKFLOWS.md](TURBO_WORKFLOWS.md). Official schedule requires eight s
 ## Access
 
 Jupyter requires its per-Pod token. ComfyUI is unauthenticated by default; for private access set `COMFY_LISTEN=127.0.0.1` and use SSH tunneling. Gradio was removed and old UI_USERNAME/UI_PASSWORD settings do not protect ComfyUI.
+
+## v0.4.1 upgrade and canvas controls
+
+Existing Pods do not automatically update when the public template changes. Save your files, then use the v0.4.1 image and the Turbo-prefixed modular workflows. Read [TURBO_WORKFLOWS.md](TURBO_WORKFLOWS.md) for controls. Zoom above 60% if ComfyUI hides canvas text. The loader was tested using a locally created zero-effect adapter; real adapter compatibility and visual quality are separate checks. See [validation](docs/testing-v0.4.1.md).

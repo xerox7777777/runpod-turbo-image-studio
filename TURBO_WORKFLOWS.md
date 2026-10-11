@@ -16,6 +16,8 @@ Open Workflows and choose **Turbo-Generation**, **Turbo-Portrait**, **Turbo-Land
 
 The graph exposes real configuration connections for the official Diffusers pipeline. `TURBO_MODEL`, `TURBO_CONDITIONING` and `TURBO_SAMPLING` are specific types, not native ComfyUI MODEL/CLIP/LATENT objects. Use the included Turbo LoRA loader and sampler with those handles. Native KSampler/LoRA Loader cannot replace them. Standard native model loaders remain installed for separate compatible workflows. This avoids claiming unsupported native checkpoint compatibility.
 
+The v0.4.1 loader integration was verified with a locally created zero-effect adapter, including strength and reset. Compatibility and visual quality of any real adapter still require testing. If canvas text is hidden at low zoom, zoom above 60%.
+
 ## Manager and dependencies
 
 Manager is enabled through ComfyUI's supported `--enable-manager` integration. Open its extension/Manager control to browse installed nodes or the registry; standard security defaults are retained. All bundled workflows run without installing another node. Additional third-party node packages can change dependencies; the tested image remains the recovery baseline. Save user files and avoid updating the core blindly. Durable files require a volume mounted at `/workspace`.

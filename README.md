@@ -4,11 +4,11 @@
 
 ComfyUI generation and single-image editing with the official **Qwen/Qwen-Image-2.1-Turbo** checkpoint. Official weights download directly from Qwen on the first queued request. No third-party checkpoint or LoRA is included. Gradio is not included.
 
-## v0.4.0 modular workflows
+## v0.4.1 modular workflows
 
-Open **Turbo-Generation**, **Turbo-Portrait**, **Turbo-Landscape** or **Turbo-Image-Edit**. The connected graph exposes model/precision/offload, LoRA selection/strength, prompts, schedule/steps/CFG/KV caching, resolution/seed, preview/save and actual run details. Manager and all nodes are preinstalled; a sample edit image is included. See [every control explained](TURBO_WORKFLOWS.md). Official default is eight steps, CFG 1 and KV caching. Experimental schedules require explicit sigmas; changing the step count alone never silently does nothing.
+Zoom the canvas above 60% if node labels are hidden by ComfyUI’s rendering optimization. Open **Turbo-Generation**, **Turbo-Portrait**, **Turbo-Landscape** or **Turbo-Image-Edit**. The connected graph exposes model/precision/offload, LoRA selection/strength, prompts, schedule/steps/CFG/KV caching, resolution/seed, preview/save and actual run details. Manager and all nodes are preinstalled; a sample edit image is included. See [every control explained](TURBO_WORKFLOWS.md). Official default is eight steps, CFG 1 and KV caching. Experimental schedules require explicit sigmas; changing the step count alone never silently does nothing.
 
-Validation of v0.4.0 is in progress. Compatible LoRA loading is implemented; a chosen third-party adapter still needs compatibility testing.
+v0.4.1 passed 29 regression tests, CPU service checks, 19 Jupyter checks, and A40 tests for official generation, input-image editing, custom schedules, CFG, invalid settings, and real adapter loading/reset. Browser generation displayed actual settings. The LoRA integration test used a locally created zero-effect adapter; visual quality and compatibility with your chosen adapter are not yet verified. See [validation report](docs/testing-v0.4.1.md).
 
 ## Open your Pod
 
@@ -27,10 +27,10 @@ Open `START_HERE.ipynb` in Jupyter for instructions. To use Turbo, close ComfyUI
 
 | Workflow | Purpose |
 | --- | --- |
-| [text-to-image](workflows/text-to-image.json) | 1024×1024 generation |
-| [portrait](workflows/portrait.json) | 768×1024 generation |
-| [landscape](workflows/landscape.json) | 1024×768 generation |
-| [image-edit](workflows/image-edit.json) | Upload/select an image in LoadImage, then describe changes |
+| [Turbo-Generation](workflows/Turbo-Generation.json) | 1024×1024 generation |
+| [Turbo-Portrait](workflows/Turbo-Portrait.json) | 768×1024 generation |
+| [Turbo-Landscape](workflows/Turbo-Landscape.json) | 1024×768 generation |
+| [Turbo-Image-Edit](workflows/Turbo-Image-Edit.json) | Upload/select an image in LoadImage, then describe changes |
 
 The first queued request downloads roughly 32 GB of official checkpoint files. Opening either interface does not download weights. The bundled OfficialTurbo nodes call Qwen's official Diffusers pipeline with its saved Turbo schedule and KV caching. They support generation and single-image editing; masked inpainting and multi-image editing are not included. The modular workflows include an optional compatible transformer LoRA loader. Identical inputs/seed may reuse ComfyUI's cache; change the seed for a fresh result.
 
@@ -53,7 +53,7 @@ ComfyUI is copied from the pinned image into **`/workspace/ComfyUI`** on first b
 
 Input/output/user folders point to the legacy `/workspace/inputs`, `/workspace/outputs` and `/workspace/comfyui-user` folders on a new installation. See [MODEL_FOLDERS.md](MODEL_FOLDERS.md) for details. Use Jupyter Upload for small files or its Terminal to download large models directly into the matching folder. Verify the publisher, model format and license. Refresh ComfyUI and choose a compatible workflow after adding files.
 
-Adding a checkpoint or LoRA here does **not** replace the model used by the OfficialTurbo nodes. Other models use standard ComfyUI loader nodes and their own workflows. ComfyUI-Manager 4.2.2 is bundled and enabled. Startup does not automatically run third-party installation scripts. Install extra node dependencies deliberately in Jupyter Terminal; packages installed on container storage must be reinstalled on a fresh container.
+Adding a checkpoint does **not** replace the official Turbo pipeline. Compatible adapters are selected using TurboLoraLoader in the modular graphs; copying a file alone does not enable it. Other models use standard ComfyUI loader nodes and their own workflows. ComfyUI-Manager 4.2.2 is bundled and enabled. Startup does not automatically run third-party installation scripts. Install extra node dependencies deliberately in Jupyter Terminal; packages installed on container storage must be reinstalled on a fresh container.
 
 The engine saves original RGBA PNGs and prompt/seed/dimension/timing JSON to `/workspace/outputs`; standard SaveImage also saves an RGB preview. Download originals to retain alpha. Prompt metadata is embedded in PNG/JSON files, so remove private content before sharing.
 
@@ -71,7 +71,7 @@ The supervisor checks real HTTP readiness, records service status, redacts the J
 
 **Previous v0.3.3 validation:** v0.3.3 passed 24 regression tests, real CPU startup checks, 19 Jupyter API checks and 13 A40 GPU checks. Browser login, notebook execution/save, model-folder browsing, upload, terminal and image-edit graph loading passed. Generation, input-image editing, active cancellation and recovery ran on GPU. Physical disk exhaustion and GPU OOM were not induced. A deliberately terminated ComfyUI process was reported as failed while Jupyter remained usable. All test Pods were stopped. See [test details](docs/testing-v0.3.3.md).
 
-Build publication requires `pip check`, 16 engine regression tests plus workspace/auth tests, and real CPU startup checks. Checks cover both interfaces, authenticated Jupyter file/notebook uploads, native checkpoint discovery, both malformed prompt routes, all four workflows returning missing-GPU errors, a killed ComfyUI with Jupyter still accessible, and restart preservation. Disk full, download failure, permission errors and GPU OOM are simulated; physical disk exhaustion and actual GPU OOM are not induced. This is not an exhaustive guarantee for third-party models/nodes or every host.
+Build publication requires `pip check`, 29 regression tests, and real CPU startup checks. Checks cover both interfaces, authenticated Jupyter file/notebook uploads, native checkpoint discovery, both malformed prompt routes, all legacy and modular workflows returning missing-GPU errors, a killed ComfyUI with Jupyter still accessible, and restart preservation. Disk full, download failure, permission errors and GPU OOM are simulated; physical disk exhaustion and actual GPU OOM are not induced. This is not an exhaustive guarantee for third-party models/nodes or every host.
 
 RunPod base, ComfyUI, Diffusers and official model revisions are pinned, together with key Python packages. Remaining transitive dependencies use upstream constraints; `/app/installed-dependencies.txt` records the built environment. GitHub Actions publishes versioned linux/amd64 images. A public Pod template needs a public image/configuration; the GitHub repo provides source, builds, documentation and issues.
 
