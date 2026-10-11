@@ -47,4 +47,4 @@ Existing Pods do not automatically update when the public template changes. Save
 
 ## Slow Turbo generation
 
-Use a Turbo-Fast workflow and inspect Actual Run Settings: offload should say gpu_resident on the tested A40 at <=1 MP and CFG 1. model_cpu_offload moves components for each request and was measured around 30 seconds here. Auto falls back to offloading outside its tested envelope. A new image does not overwrite user-saved older workflow files; load the Fast versions. First loading/download is separate from inference.
+Use a current bundled workflow and inspect Actual Run Settings: offload should say gpu_resident on the tested A40 at <=1 MP and CFG 1. model_cpu_offload moves components for each request and was measured around 30 seconds here. Auto falls back to offloading outside its tested envelope. Unmodified legacy bundled workflows move to backups/retired-workflows; user-edited files are preserved. First loading/download is separate from inference.

@@ -1,6 +1,8 @@
 """Prepare editable ComfyUI files while preserving user models and workflows."""
 import json
+import hashlib
 import shutil
+import uuid
 from pathlib import Path
 
 CORE_REVISION = '7f7fd918ed0815c5d5ef2ccfe44bfc8e72cfd217'
@@ -46,6 +48,23 @@ def prepare(workspace, baked, app):
         inside(workspace, alias).mkdir(parents=True, exist_ok=True)
     workflow_dir = inside(workspace, comfy/'user'/'default'/'workflows')
     workflow_dir.mkdir(parents=True, exist_ok=True)
+    retired_manifest = app/'retired-workflows.json'
+    if retired_manifest.exists():
+        for name, fingerprints in json.loads(retired_manifest.read_text()).items():
+            previous = inside(workspace, workflow_dir/name)
+            if not previous.is_file() or previous.is_symlink():
+                continue
+            try:
+                canonical = json.dumps(json.loads(previous.read_text()), sort_keys=True, separators=(',', ':'))
+            except (ValueError, UnicodeError):
+                continue
+            if hashlib.sha256(canonical.encode()).hexdigest() not in fingerprints:
+                continue  # Preserve any user-edited workflow.
+            archive = inside(workspace, workspace/'backups'/'retired-workflows'/name)
+            archive.parent.mkdir(parents=True, exist_ok=True)
+            if archive.exists():
+                archive = inside(workspace, archive.with_name(archive.stem+'-'+uuid.uuid4().hex+archive.suffix))
+            shutil.move(str(previous), str(archive))  # Recoverable archive, no deletion.
     example = app/'examples'/'mug-before.png'
     if example.exists() and not (comfy/'input'/'example-red-mug.png').exists():
         shutil.copy2(example,inside(workspace,comfy/'input'/'example-red-mug.png'))

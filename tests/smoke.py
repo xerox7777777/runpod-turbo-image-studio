@@ -108,7 +108,7 @@ def studio_verify(data):
         pass
     else:
         raise AssertionError('Unused Gradio port unexpectedly serves')
-    saved=SMOKE_WORKSPACE/'ComfyUI/user/default/workflows/text-to-image.json'
+    saved=SMOKE_WORKSPACE/'ComfyUI/user/default/workflows/Generation.json'
     workflow=json.loads(saved.read_text())
     workflow.setdefault('extra',{})['restart_test']='preserved'
     saved.write_text(json.dumps(workflow))
@@ -189,7 +189,7 @@ check([sys.executable,'/app/startup.py','--cpu','--skip-platform'],
 
 def verify_restart(data):
     assert json.loads(data)['ready']
-    saved=SMOKE_WORKSPACE/'ComfyUI/user/default/workflows/text-to-image.json'
+    saved=SMOKE_WORKSPACE/'ComfyUI/user/default/workflows/Generation.json'
     assert json.loads(saved.read_text())['extra']['restart_test']=='preserved'
     assert jupyter_request('/api/contents/ComfyUI/models/checkpoints/upload-test.safetensors')
     print('PASS restart preserves uploaded model, notebook and user-edited workflow',flush=True)

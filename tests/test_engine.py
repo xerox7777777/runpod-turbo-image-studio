@@ -235,6 +235,36 @@ class EngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'one input image'):
             mod.TurboEdit().generate('x',512,512,42,torch.zeros(2,32,32,3))
 
+    def test_resolution_modes_and_invalid_requests(self):
+        spec=importlib.util.spec_from_file_location('resolution_node',Path(__file__).resolve().parents[1]/'custom_nodes/turbo_official/__init__.py')
+        mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+        node=mod.TurboResolution()
+        self.assertEqual(node.calculate('aspect_ratio','1:1',1.048576,1,1024,1024)[:2],(1024,1024))
+        for ratio in node.RATIOS:
+            w,h,_=node.calculate('aspect_ratio',ratio,1.048576,1,1024,1024)
+            self.assertEqual((w%16,h%16),(0,0))
+            self.assertLess(abs(w/h-node.RATIOS[ratio]),0.04)
+        w,h,_=node.calculate('match_input','1:1',1.048576,1,1024,1024,torch.zeros(1,64,96,3))
+        self.assertLess(abs(w/h-1.5),0.04)
+        self.assertEqual(node.calculate('manual','1:1',1.048576,1.5,1024,1024)[:2],(1536,1536))
+        self.assertEqual(node.calculate('aspect_ratio','1:1',1.048576,2,1024,1024)[:2],(2048,2048))
+        for mode,mp,mult,img in [('match_input',1,1,None),('match_input',1,1,torch.zeros(2,32,32,3)),('unknown',1,1,None),('aspect_ratio',float('nan'),1,None),('aspect_ratio',1,float('inf'),None),('aspect_ratio',4,2,None),('aspect_ratio',0.25,0.25,None)]:
+            with self.assertRaises(ValueError):node.calculate(mode,'1:1',mp,mult,1024,1024,img)
+
+    def test_retired_workflow_archive_preserves_user_edits(self):
+        import workspace,hashlib
+        root=Path(self.tmp)/'migration';app=root/'app';baked=root/'baked';target=root/'workspace'
+        app.mkdir(parents=True);baked.mkdir();(app/'custom_nodes/turbo_official/web').mkdir(parents=True)
+        for name in ('engine.py','request_guard.py','custom_nodes/turbo_official/__init__.py'):(app/name).write_text('# fixture')
+        original={'nodes':[],'version':0.4};canonical=json.dumps(original,sort_keys=True,separators=(',',':'))
+        (app/'retired-workflows.json').write_text(json.dumps({'legacy.json':[hashlib.sha256(canonical.encode()).hexdigest()],'edited.json':[hashlib.sha256(canonical.encode()).hexdigest()]}))
+        comfy=workspace.prepare(target,baked,app);folder=comfy/'user/default/workflows'
+        (folder/'legacy.json').write_text(json.dumps(original,indent=2));(folder/'edited.json').write_text(json.dumps({'nodes':[],'version':0.4,'user_changes':True}))
+        workspace.prepare(target,baked,app)
+        self.assertFalse((folder/'legacy.json').exists())
+        self.assertTrue((target/'backups/retired-workflows/legacy.json').exists())
+        self.assertTrue((folder/'edited.json').exists())
+
     def test_saved_result_displays_original_without_creating_copy(self):
         spec=importlib.util.spec_from_file_location('turbo_saved_node',Path(__file__).resolve().parents[1]/'custom_nodes/turbo_official/__init__.py')
         mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)

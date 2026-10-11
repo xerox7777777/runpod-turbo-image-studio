@@ -1,5 +1,7 @@
 """ComfyUI nodes wrapping Qwen's official Diffusers checkpoint."""
 import sys
+import math
+import json
 from pathlib import Path
 import numpy as np
 import torch
@@ -166,6 +168,53 @@ class TurboSampler(TurboGenerate):
             lora_path=model.get('lora_path'),lora_strength=model.get('lora_strength',1.0),memory_mode=model.get('offload','auto')))
 
 
+class TurboResolution:
+    RATIOS = {'1:1': 1, '3:4': 3/4, '4:3': 4/3, '2:3': 2/3,
+              '3:2': 3/2, '9:16': 9/16, '16:9': 16/9, '9:21': 9/21, '21:9': 21/9}
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required': {
+            'mode': (['aspect_ratio', 'match_input', 'manual'],),
+            'aspect_ratio': (list(cls.RATIOS),),
+            'target_megapixels': ('FLOAT', {'default': 1.048576, 'min': 0.25, 'max': 4.0, 'step': 0.05}),
+            'multiplier': ('FLOAT', {'default': 1.0, 'min': 0.25, 'max': 2.0, 'step': 0.05}),
+            'manual_width': ('INT', {'default': 1024, 'min': 512, 'max': 2752, 'step': 16}),
+            'manual_height': ('INT', {'default': 1024, 'min': 512, 'max': 2752, 'step': 16})},
+            'optional': {'image': ('IMAGE',)}}
+    RETURN_TYPES = ('INT', 'INT', 'STRING')
+    RETURN_NAMES = ('width', 'height', 'resolution_details')
+    FUNCTION = 'calculate'
+    CATEGORY = 'Turbo Image Studio/Workflow'
+    def calculate(self, mode, aspect_ratio, target_megapixels, multiplier, manual_width, manual_height, image=None):
+        if not math.isfinite(target_megapixels) or not 0.25 <= target_megapixels <= 4:
+            raise ValueError('Target megapixels must be 0.25–4.')
+        if not math.isfinite(multiplier) or not 0.25 <= multiplier <= 2:
+            raise ValueError('Resolution multiplier must be 0.25–2; it multiplies both dimensions.')
+        if mode == 'manual':
+            engine.validate('resolution', manual_width, manual_height, 0)
+            w, h = manual_width, manual_height
+        elif mode in ('aspect_ratio', 'match_input'):
+            if mode == 'match_input':
+                if image is None or image.ndim != 4 or image.shape[0] != 1 or min(image.shape[1:3]) <= 0:
+                    raise ValueError('Match input needs one connected input image.')
+                ratio = image.shape[2]/image.shape[1]
+            else:
+                if aspect_ratio not in self.RATIOS: raise ValueError('Choose a supported aspect ratio.')
+                ratio = self.RATIOS[aspect_ratio]
+            area = target_megapixels*1_000_000
+            w, h = math.sqrt(area*ratio), math.sqrt(area/ratio)
+        else:
+            raise ValueError('Choose aspect_ratio, match_input or manual sizing.')
+        w, h = (int(round(x*multiplier/16))*16 for x in (w,h))
+        if not (512 <= w <= 2752 and 512 <= h <= 2752):
+            raise ValueError(f'Calculated {w}×{h} is outside 512–2752 per dimension. Adjust target megapixels/multiplier or use manual mode.')
+        details = json.dumps({'mode': mode, 'aspect_ratio': aspect_ratio if mode == 'aspect_ratio' else None,
+            'target_megapixels': target_megapixels if mode != 'manual' else None,
+            'dimension_multiplier': multiplier, 'width': w, 'height': h,
+            'actual_megapixels': round(w*h/1_000_000, 6), 'alignment': 16}, indent=2)
+        return w, h, details
+
+
 class TurboRunDetails:
     @classmethod
     def INPUT_TYPES(cls):
@@ -197,9 +246,9 @@ class TurboSavedResult:
         return {'ui': {'images': [{'filename': relative.name, 'subfolder': str(relative.parent) if relative.parent != Path('.') else '', 'type': 'output'}]}}
 
 
-NODE_CLASS_MAPPINGS.update({'TurboSavedResult':TurboSavedResult,'TurboModelConfig':TurboModel,'TurboLoraLoader':TurboLora,'TurboPrompt':TurboPrompt,
+NODE_CLASS_MAPPINGS.update({'TurboResolution':TurboResolution,'TurboSavedResult':TurboSavedResult,'TurboModelConfig':TurboModel,'TurboLoraLoader':TurboLora,'TurboPrompt':TurboPrompt,
                           'TurboSamplingSettings':TurboSampling,'TurboSampler':TurboSampler,'TurboRunDetails':TurboRunDetails})
-NODE_DISPLAY_NAME_MAPPINGS.update({'TurboSavedResult':'Saved Turbo Image (original RGBA)','TurboModelConfig':'Official Turbo Model / Precision',
+NODE_DISPLAY_NAME_MAPPINGS.update({'TurboResolution':'Aspect Ratio / Auto Resolution / Multiplier','TurboSavedResult':'Saved Turbo Image (original RGBA)','TurboModelConfig':'Official Turbo Model / Precision',
     'TurboLoraLoader':'Qwen 2.1 Transformer LoRA (optional)', 'TurboPrompt':'Turbo Positive / Negative Prompt',
     'TurboSamplingSettings':'Turbo Schedule / Steps / CFG / KV Cache', 'TurboSampler':'Turbo Generate or Edit Sampler',
     'TurboRunDetails':'Actual Turbo Run Settings'})

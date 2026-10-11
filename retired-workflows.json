@@ -1,0 +1,44 @@
+{
+  "image-edit.json": [
+    "0635c96f0c6b4618888de582febe626e268958f3736f6be3fb663fb1bad17f0f"
+  ],
+  "landscape.json": [
+    "b12e31c593330b8edae33a109ef3ff31716a79ef16a6baff2a67b0e99c182dfa",
+    "d89e8b2c053f87d3f0f7e6861ecffc41ef956e4cbb78012e8c1ed0d9e60cca2f"
+  ],
+  "portrait.json": [
+    "1b9345e7e3905e0c73648a84569739c7f6d65fab852f6da79d9700dc8b860f05",
+    "712f4799a07c00337bb767c6d1b4ec9bb300f13df92f2bb618349014e1f67d33"
+  ],
+  "text-to-image.json": [
+    "16661629a7b0982b06197d5f76854220bd75bc65f98688c4b589c2507d15cd55"
+  ],
+  "Turbo-Fast-Generation.json": [
+    "30e5955abb73077d3ae02cfc791bcbede94837668df8126c53f171450f9714a7"
+  ],
+  "Turbo-Fast-Image-Edit.json": [
+    "8e5c8ed26d85118ffb6ae5fb9fe396cf5d1c0ae04622cd08318cec837649aeac"
+  ],
+  "Turbo-Fast-Landscape.json": [
+    "8c9b08ec569db1ed1125b91bb5a1497a5f19b497926c966ca37ae2fdc6d36ae5"
+  ],
+  "Turbo-Fast-Portrait.json": [
+    "f5cac12a06c37e196e8f99251051c2dc8b90a033f12e11b07635660e25772dd7"
+  ],
+  "Turbo-Generation.json": [
+    "2296a8e865d493ae7b76711764ac10baf17e725e0f7715b654ad237966251093",
+    "30e5955abb73077d3ae02cfc791bcbede94837668df8126c53f171450f9714a7"
+  ],
+  "Turbo-Image-Edit.json": [
+    "7c7ab16092c3fa223666f9be135104bfdc2f713db1aad80d479d178e7fe53463",
+    "8e5c8ed26d85118ffb6ae5fb9fe396cf5d1c0ae04622cd08318cec837649aeac"
+  ],
+  "Turbo-Landscape.json": [
+    "4c4c2e0ee8c0f6ca1b825567f747453b2587d31886a06bf7ed93464a851f366c",
+    "8c9b08ec569db1ed1125b91bb5a1497a5f19b497926c966ca37ae2fdc6d36ae5"
+  ],
+  "Turbo-Portrait.json": [
+    "8b73a5978aaa0729701e1a09679bea9ab4fa5ebd91ffac86daa42c39767c5b69",
+    "f5cac12a06c37e196e8f99251051c2dc8b90a033f12e11b07635660e25772dd7"
+  ]
+}

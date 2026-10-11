@@ -1,6 +1,6 @@
 {
-  "last_node_id": 9,
-  "last_link_id": 7,
+  "last_node_id": 12,
+  "last_link_id": 22,
   "nodes": [
     {
       "id": 1,
@@ -43,7 +43,7 @@
       "title": "2 \u00b7 Optional compatible Qwen 2.1 LoRA",
       "pos": [
         30,
-        320
+        310
       ],
       "size": [
         350,
@@ -154,7 +154,7 @@
       "title": "5 \u00b7 Run generation or input-image edit",
       "pos": [
         900,
-        110
+        50
       ],
       "size": [
         350,
@@ -183,6 +183,22 @@
           "name": "image",
           "type": "IMAGE",
           "link": null
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "link": 20,
+          "widget": {
+            "name": "width"
+          }
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "link": 21,
+          "widget": {
+            "name": "height"
+          }
         }
       ],
       "outputs": [
@@ -212,7 +228,7 @@
         "Node name for S&R": "TurboSampler"
       },
       "widgets_values": [
-        768,
+        1024,
         1024,
         42,
         "fixed"
@@ -223,7 +239,7 @@
       "type": "TurboSavedResult",
       "title": "6 \u00b7 Saved original RGBA result",
       "pos": [
-        1300,
+        1500,
         50
       ],
       "size": [
@@ -251,8 +267,8 @@
       "type": "TurboRunDetails",
       "title": "7 \u00b7 Actual settings, LoRA, timings",
       "pos": [
-        1300,
-        440
+        1500,
+        460
       ],
       "size": [
         500,
@@ -280,7 +296,7 @@
       "title": "Read this first",
       "pos": [
         30,
-        610
+        580
       ],
       "size": [
         360,
@@ -295,8 +311,96 @@
         "Node name for S&R": "Note"
       },
       "widgets_values": [
-        "Official schedule needs steps=8. To try another count select experimental_linear; custom_sigmas needs exactly steps descending values, without terminal zero. Other schedules/CFG are experimental. Negative prompt is used only with CFG > 1. LoRA: None works immediately; upload a compatible Qwen Image 2.1 transformer adapter to models/loras and refresh. Older Qwen/Edit LoRAs may be incompatible. This graph uses typed Turbo pipeline handles, not native KSampler MODEL/LATENT. IMAGE outputs work with standard image nodes."
+        "Choose aspect_ratio for presets, match_input for an edit image, or manual dimensions. Megapixels sets the pixel budget. Multiplier scales BOTH dimensions: 2x uses 4x pixels. Dimensions round to 16; invalid sizes produce an explanatory error. Larger sizes may switch auto memory to CPU offload and take longer. Keep official schedule at 8 steps / CFG 1 / KV on. LoRA is optional and installed."
       ]
+    },
+    {
+      "id": 11,
+      "type": "TurboResolution",
+      "title": "Resolution \u00b7 aspect ratio / multiplier / manual",
+      "pos": [
+        900,
+        420
+      ],
+      "size": [
+        380,
+        280
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "links": [
+            20
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": [
+            21
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "resolution_details",
+          "type": "STRING",
+          "links": [
+            22
+          ],
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "TurboResolution"
+      },
+      "widgets_values": [
+        "aspect_ratio",
+        "1:1",
+        1.048576,
+        1.0,
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": 12,
+      "type": "TurboRunDetails",
+      "title": "Calculated size \u00b7 before generation",
+      "pos": [
+        900,
+        750
+      ],
+      "size": [
+        500,
+        320
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "details",
+          "type": "STRING",
+          "link": 22
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "TurboRunDetails"
+      },
+      "widgets_values": []
     }
   ],
   "links": [
@@ -347,16 +451,89 @@
       7,
       0,
       "STRING"
+    ],
+    [
+      20,
+      11,
+      0,
+      5,
+      4,
+      "INT"
+    ],
+    [
+      21,
+      11,
+      1,
+      5,
+      5,
+      "INT"
+    ],
+    [
+      22,
+      11,
+      2,
+      12,
+      0,
+      "STRING"
     ]
   ],
-  "groups": [],
+  "groups": [
+    {
+      "title": "Model and LoRA",
+      "bounding": [
+        10,
+        10,
+        390,
+        540
+      ],
+      "color": "#3f5159",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "Prompt and sampling",
+      "bounding": [
+        410,
+        10,
+        450,
+        640
+      ],
+      "color": "#3f5159",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "Canvas size and generation",
+      "bounding": [
+        880,
+        10,
+        580,
+        1100
+      ],
+      "color": "#3f5159",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "title": "Original output and actual settings",
+      "bounding": [
+        1480,
+        10,
+        560,
+        930
+      ],
+      "color": "#3f5159",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.55,
+      "scale": 0.63,
       "offset": [
-        480,
-        80
+        50,
+        50
       ]
     }
   },

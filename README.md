@@ -6,7 +6,7 @@ ComfyUI generation and single-image editing with the official **Qwen/Qwen-Image-
 
 ## v0.4.2 performance fix
 
-Zoom the canvas above 60% if node labels are hidden by ComfyUI’s rendering optimization. Open **Turbo-Fast-Generation**, **Turbo-Fast-Portrait**, **Turbo-Fast-Landscape** or **Turbo-Fast-Image-Edit**. The connected graph exposes model/precision/memory mode, LoRA selection/strength, prompts, schedule/steps/CFG/KV caching, resolution/seed, preview/save and actual run details. Manager and all nodes are preinstalled; a sample edit image is included. See [every control explained](TURBO_WORKFLOWS.md). Official default is eight steps, CFG 1 and KV caching. Auto memory mode keeps the full official BF16 pipeline on a GPU with at least 44 GiB total/free VRAM for outputs up to 1 MP at CFG 1. Other workloads use CPU offloading; gpu_resident can be selected explicitly but needs enough memory. Verified on A40: generation 6.7–7.2 seconds and single-image editing 8.7–8.9 seconds at 1024×1024, excluding first model loading/download. The Fast graphs show/save one original RGBA result, without duplicate SaveImage/Preview outputs. Experimental schedules require explicit sigmas; changing the step count alone never silently does nothing.
+Zoom the canvas above 60% if node labels are hidden by ComfyUI’s rendering optimization. Open **Generation** or **Image-Edit**. The connected graph exposes model/precision/memory mode, LoRA selection/strength, prompts, schedule/steps/CFG/KV caching, resolution/seed, preview/save and actual run details. Manager and all nodes are preinstalled; a sample edit image is included. See [every control explained](TURBO_WORKFLOWS.md). Official default is eight steps, CFG 1 and KV caching. Auto memory mode keeps the full official BF16 pipeline on a GPU with at least 44 GiB total/free VRAM for outputs up to 1 MP at CFG 1. Other workloads use CPU offloading; gpu_resident can be selected explicitly but needs enough memory. Verified on A40: generation 6.7–7.2 seconds and single-image editing 8.7–8.9 seconds at 1024×1024, excluding first model loading/download. The bundled graphs show/save one original RGBA result, without duplicate SaveImage/Preview outputs. Experimental schedules require explicit sigmas; changing the step count alone never silently does nothing.
 
 v0.4.1 passed 29 regression tests, CPU service checks, 19 Jupyter checks, and A40 tests for official generation, input-image editing, custom schedules, CFG, invalid settings, and real adapter loading/reset. Browser generation displayed actual settings. The LoRA integration test used a locally created zero-effect adapter; visual quality and compatibility with your chosen adapter are not yet verified. See [previous validation report](docs/testing-v0.4.1.md) and [performance verification](docs/testing-v0.4.2.md).
 
@@ -27,10 +27,8 @@ Open `START_HERE.ipynb` in Jupyter for instructions. To use Turbo, close ComfyUI
 
 | Workflow | Purpose |
 | --- | --- |
-| [Turbo-Fast-Generation](workflows/Turbo-Fast-Generation.json) | 1024×1024 generation |
-| [Turbo-Fast-Portrait](workflows/Turbo-Fast-Portrait.json) | 768×1024 generation |
-| [Turbo-Fast-Landscape](workflows/Turbo-Fast-Landscape.json) | 1024×768 generation |
-| [Turbo-Fast-Image-Edit](workflows/Turbo-Fast-Image-Edit.json) | Upload/select an image in LoadImage, then describe changes |
+| [Generation](workflows/Generation.json) | 1024×1024 generation |
+| [Image-Edit](workflows/Image-Edit.json) | Upload/select an image in LoadImage, then describe changes |
 
 The first queued request downloads roughly 32 GB of official checkpoint files. Opening either interface does not download weights. The bundled OfficialTurbo nodes call Qwen's official Diffusers pipeline with its saved Turbo schedule and KV caching. They support generation and single-image editing; masked inpainting and multi-image editing are not included. The modular workflows include an optional compatible transformer LoRA loader. Identical inputs/seed may reuse ComfyUI's cache; change the seed for a fresh result.
 
@@ -92,3 +90,18 @@ v0.3.3, A40, 512×512. Prompt: Change the red coffee mug to a blue coffee mug. K
 | Generated input | Edited output |
 | --- | --- |
 | ![Red mug](examples/mug-before.png) | ![Blue mug](examples/mug-after.png) |
+
+## Canvas size controls
+
+Generation and Image-Edit each include the installed **Aspect Ratio / Auto Resolution / Multiplier** node, connected to the sampler width/height. There are no separate fast, portrait or landscape graphs.
+
+* **aspect_ratio** chooses square, portrait, landscape, widescreen or ultrawide presets.
+* **match_input** calculates canvas dimensions from the connected input image aspect ratio; Image-Edit uses this by default. It does not crop the uploaded input.
+* **manual** uses the explicit width and height instead of megapixel sizing.
+* **target_megapixels** sets the approximate pixel budget; the default 1.048576 MP gives a 1024 square.
+* **multiplier** scales both dimensions; 2x produces approximately four times the pixels. It changes generation resolution, not a separate post-generation upscaler.
+* Dimensions round to multiples of 16. The calculated size display runs before inference; Actual Run Settings records the executed dimensions afterward. Values outside 512–2752 per side produce a clear error rather than silently distorting the ratio.
+
+Larger canvases can move auto memory mode to CPU offload and increase time and VRAM demand. The previous A40 timings apply to 1024x1024, not arbitrary multipliers. No extra model downloads are required for these controls. The official Turbo checkpoint and eight-step defaults are unchanged. Native IMAGE/INT outputs remain compatible with ordinary image processing and size nodes.
+
+On upgrade, known unmodified legacy bundled graphs are moved to `/workspace/backups/retired-workflows`. User-edited graphs are retained; any such graph may still need its memory setting changed manually.

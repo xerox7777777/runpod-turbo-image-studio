@@ -50,8 +50,14 @@
         "4",
         0
       ],
-      "width": 1024,
-      "height": 768,
+      "width": [
+        "11",
+        0
+      ],
+      "height": [
+        "11",
+        1
+      ],
       "seed": 42
     }
   },
@@ -69,6 +75,26 @@
     "inputs": {
       "details": [
         "5",
+        2
+      ]
+    }
+  },
+  "11": {
+    "class_type": "TurboResolution",
+    "inputs": {
+      "mode": "aspect_ratio",
+      "aspect_ratio": "1:1",
+      "target_megapixels": 1.048576,
+      "multiplier": 1.0,
+      "manual_width": 1024,
+      "manual_height": 1024
+    }
+  },
+  "12": {
+    "class_type": "TurboRunDetails",
+    "inputs": {
+      "details": [
+        "11",
         2
       ]
     }
