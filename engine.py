@@ -83,7 +83,9 @@ def run(prompt, width=1024, height=1024, seed=-1, source_image=None, progress=No
         except OSError as exc:
             log.exception("Model or output I/O failed")
             raise RuntimeError("Download/cache/output failed. Check free disk space, Hugging Face connectivity and permissions; cached downloads resume on retry. See Pod logs and README.") from exc
-        except Exception:
+        except BaseException:
+            # ComfyUI's InterruptProcessingException derives from BaseException.
+            # Always re-raise it after cleanup so ComfyUI records cancellation.
             # An interrupted callback can leave offload/KV state unfinished.
             # Reload on retry instead of reusing that partially completed state.
             if step_callback is not None:

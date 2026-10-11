@@ -125,7 +125,7 @@ class EngineTests(unittest.TestCase):
             self.assertTrue(Path(engine.run('x',512,512,0)[1]).exists())
 
     def test_step_callback_cancellation_resets_and_retry_succeeds(self):
-        class Cancelled(Exception):
+        class Cancelled(BaseException):
             pass
         class CallbackPipeline(FakePipeline):
             def __call__(self, **kwargs):
