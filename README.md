@@ -53,7 +53,7 @@ Input/output/user folders point to the legacy `/workspace/inputs`, `/workspace/o
 
 Adding a checkpoint does **not** replace the official Turbo pipeline. Compatible adapters are selected using TurboLoraLoader in the modular graphs; copying a file alone does not enable it. Other models use standard ComfyUI loader nodes and their own workflows. ComfyUI-Manager 4.2.2 is bundled and enabled. Startup does not automatically run third-party installation scripts. Install extra node dependencies deliberately in Jupyter Terminal; packages installed on container storage must be reinstalled on a fresh container.
 
-The engine saves original RGBA PNGs and prompt/seed/dimension/timing JSON to `/workspace/outputs`; the Fast workflow displays that saved original directly. Download originals to retain alpha. Prompt metadata is embedded in PNG/JSON files, so remove private content before sharing.
+The engine saves original RGBA PNGs and prompt/seed/dimension/timing JSON to `/workspace/outputs`; the workflow displays that saved original directly. Download originals to retain alpha. Prompt metadata is embedded in PNG/JSON files, so remove private content before sharing.
 
 ## Resources, storage and access
 
