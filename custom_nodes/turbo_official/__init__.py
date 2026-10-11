@@ -51,7 +51,7 @@ class TurboGenerate:
         progress = ProgressBar(1)
         def update(pipeline, step, timestep, tensors):
             throw_exception_if_processing_interrupted()
-            progress.update_absolute(step + 1, len(pipeline.timesteps))
+            progress.update_absolute(step + 1, pipeline.num_timesteps)
             return tensors
         return update
 

@@ -186,7 +186,7 @@ class EngineTests(unittest.TestCase):
         with patch.dict(sys.modules,modules):
             callback=mod.TurboGenerate.step_callback()
             tensors={'latents':'unchanged'}
-            self.assertIs(callback(SimpleNamespace(timesteps=range(8)),2,0,tensors),tensors)
+            self.assertIs(callback(SimpleNamespace(num_timesteps=8),2,0,tensors),tensors)
         interrupt.assert_called_once_with()
         progress.update_absolute.assert_called_once_with(3,8)
 
