@@ -16,7 +16,7 @@ from pathlib import Path
 from workspace import prepare, inside
 
 APP = Path(__file__).resolve().parent
-STATE = {'version': 'v0.3.0', 'comfyui': 'starting', 'jupyter': 'starting',
+STATE = {'version': 'v0.3.1', 'comfyui': 'starting', 'jupyter': 'starting',
          'message': 'Preparing workspace. Model downloads begin only on the first queued request.'}
 STOP = threading.Event()
 

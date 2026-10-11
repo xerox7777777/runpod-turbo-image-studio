@@ -26,8 +26,14 @@ def prepare(workspace, baked, app):
             raise ValueError('Existing ComfyUI installation is not this pinned bundle. '
                              'Use an empty workspace or rename it in Jupyter before restarting.')
     else:
-        shutil.copytree(baked, comfy, symlinks=True,
-                        ignore=shutil.ignore_patterns('.git', '__pycache__', 'turbo_official', 'input', 'output', 'user'))
+        def ignore_bundle(path, names):
+            ignored = {name for name in names if name in ('.git', '__pycache__')}
+            if Path(path) == baked:
+                ignored.update(set(names) & {'input', 'output', 'user'})
+            if Path(path) == baked/'custom_nodes':
+                ignored.update(set(names) & {'turbo_official'})
+            return ignored
+        shutil.copytree(baked, comfy, symlinks=True, ignore=ignore_bundle)
         marker.write_text(CORE_REVISION)
     for name in MODEL_FOLDERS:
         inside(workspace, comfy/'models'/name).mkdir(parents=True, exist_ok=True)

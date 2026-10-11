@@ -2,7 +2,7 @@
 
 [Deploy the public Pod template](https://console.runpod.io/hub/template/92ov0cv1fr) · [Workflows](workflows) · [Support](SUPPORT.md)
 
-ComfyUI generation and single-image editing with the official **Qwen/Qwen-Image-2.1-Turbo** checkpoint. Official weights download directly from Qwen on the first queued request. No third-party checkpoint or LoRA is included. Gradio was removed in v0.3.0.
+ComfyUI generation and single-image editing with the official **Qwen/Qwen-Image-2.1-Turbo** checkpoint. Official weights download directly from Qwen on the first queued request. No third-party checkpoint or LoRA is included. Gradio was removed in v0.3.1.
 
 ## Open your Pod
 
@@ -63,7 +63,7 @@ Jupyter is token protected. ComfyUI and the status page are unauthenticated for 
 
 The supervisor checks real HTTP readiness, records service status, redacts the Jupyter token from logs and keeps Jupyter available after a ComfyUI startup/crash failure. Logs are in `/workspace/logs`. Failures are visible on 8080; services do not automatically restart, create another Pod or rent additional compute. Fix the cause and restart the Pod. Missing CUDA, invalid input, download/cache/output problems and OOM return errors through ComfyUI, with tracebacks in its logs. Inference is serialized; OOM and active interruption clear the pipeline for retry. Cancel is checked at denoising step boundaries and may wait during an in-flight GPU operation or initial loading.
 
-**v0.3.0 validation:** build and fresh GPU/Jupyter/browser verification pending. Previous v0.2.6 passed real A40 generation, input-image editing, progress, active cancellation and recovery. Cancellation stopped inside the Turbo node in 1.922 seconds without a saved canceled PNG; the next request reloaded and succeeded. Historical generation/edit timings were around 30–35 seconds, excluding initial loading, with variation between hosts.
+**v0.3.1 validation:** build and fresh GPU/Jupyter/browser verification pending. Previous v0.2.6 passed real A40 generation, input-image editing, progress, active cancellation and recovery. Cancellation stopped inside the Turbo node in 1.922 seconds without a saved canceled PNG; the next request reloaded and succeeded. Historical generation/edit timings were around 30–35 seconds, excluding initial loading, with variation between hosts.
 
 Build publication requires `pip check`, 16 engine regression tests plus workspace/auth tests, and real CPU startup checks. Checks cover both interfaces, authenticated Jupyter file/notebook uploads, native checkpoint discovery, both malformed prompt routes, all four workflows returning missing-GPU errors, a killed ComfyUI with Jupyter still accessible, and restart preservation. Disk full, download failure, permission errors and GPU OOM are simulated; physical disk exhaustion and actual GPU OOM are not induced. This is not an exhaustive guarantee for third-party models/nodes or every host.
 

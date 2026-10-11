@@ -27,6 +27,15 @@ class WorkspaceTests(unittest.TestCase):
         self.assertEqual((comfy/'output').resolve(), self.volume/'outputs')
         self.assertTrue((self.volume/'START_HERE.ipynb').exists())
 
+    def test_internal_input_package_is_preserved(self):
+        package = self.baked/'comfy_api'/'input'
+        package.mkdir(parents=True)
+        (package/'__init__.py').write_text('internal API')
+        (self.baked/'input').mkdir()
+        comfy = workspace.prepare(self.volume, self.baked, self.app)
+        self.assertEqual((comfy/'comfy_api'/'input'/'__init__.py').read_text(), 'internal API')
+        self.assertEqual((comfy/'input').resolve(), self.volume/'inputs')
+
     def test_restart_preserves_models_workflows_and_custom_nodes(self):
         comfy = workspace.prepare(self.volume, self.baked, self.app)
         saved = comfy/'user'/'default'/'workflows'/'image-edit.json'
