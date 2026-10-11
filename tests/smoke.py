@@ -49,6 +49,8 @@ def studio_verify(data):
     assert state['ready'],state
     root=jupyter_request('/api/contents')
     assert 'ComfyUI' in [item['name'] for item in root['content']]
+    checkpoint_folder=jupyter_request('/api/contents/ComfyUI/models/checkpoints')
+    assert isinstance(checkpoint_folder,dict) and checkpoint_folder['type']=='directory',checkpoint_folder
     for token in ('', 'incorrect-token'):
         try:
             jupyter_request('/api/status',token=token)
@@ -67,6 +69,12 @@ def studio_verify(data):
         {'cell_type':'code','id':'test','source':'2 + 2','metadata':{},'execution_count':None,'outputs':[]}]}
     jupyter_request('/api/contents/upload-test.ipynb',{'type':'notebook','format':'json','content':notebook})
     assert jupyter_request('/api/contents/upload-test.ipynb')['content']['cells'][0]['source']=='2 + 2'
+    request=urllib.request.Request('http://127.0.0.1:8888/api/contents/upload-test.ipynb/checkpoints',
+        data=b'',headers={'Authorization':'token '+SMOKE_TOKEN},method='POST')
+    with urllib.request.urlopen(request,timeout=10) as response:
+        assert 'id' in json.load(response)
+    assert isinstance(jupyter_request('/api/contents/upload-test.ipynb/checkpoints'),list)
+    print('PASS checkpoint model folder is browsable; notebook checkpoint API preserved',flush=True)
     print('PASS Jupyter file/notebook upload and native ComfyUI checkpoint discovery',flush=True)
     with urllib.request.urlopen('http://127.0.0.1:8188/object_info') as response:
         comfy_verify(response.read())

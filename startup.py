@@ -16,7 +16,7 @@ from pathlib import Path
 from workspace import prepare, inside
 
 APP = Path(__file__).resolve().parent
-STATE = {'version': 'v0.3.1', 'comfyui': 'starting', 'jupyter': 'starting',
+STATE = {'version': 'v0.3.2', 'comfyui': 'starting', 'jupyter': 'starting',
          'message': 'Preparing workspace. Model downloads begin only on the first queued request.'}
 STOP = threading.Event()
 
@@ -89,7 +89,8 @@ def main():
     config = {'IdentityProvider': {'token': token}, 'ServerApp': {
         'ip': '0.0.0.0', 'port': 8888, 'port_retries': 0, 'root_dir': str(workspace),
         'allow_root': True, 'open_browser': False, 'allow_remote_access': True,
-        'trust_xheaders': True}, 'FileContentsManager': {'delete_to_trash': True}}
+        'trust_xheaders': True, 'jpserver_extensions': {'jupyter_workspace_routes': True}},
+        'FileContentsManager': {'delete_to_trash': True}}
     config_path = Path(tempfile.gettempdir())/('turbo-jupyter-'+str(os.getpid())+'.json')
     fd = os.open(config_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, 'w') as file:
