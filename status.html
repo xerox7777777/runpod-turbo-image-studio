@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Turbo Image Studio startup</title>
+<style>body{font:17px system-ui;max-width:780px;margin:60px auto;padding:0 24px;background:#101622;color:#edf0f7}h1{font-size:32px}a{color:#aab7ff}section{background:#1c2638;padding:22px;border-radius:12px;margin:20px 0}dt{font-weight:bold}dd{margin:8px 0 18px}code{color:#d6dcff}.links{display:flex;gap:25px;flex-wrap:wrap}</style>
+<h1>Turbo Image Studio</h1><p>ComfyUI and JupyterLab</p>
+<section><p id="message">Checking startup…</p><dl><dt>ComfyUI · 8188</dt><dd id="comfyui">Starting</dd><dt>JupyterLab · 8888</dt><dd id="jupyter">Starting</dd></dl><div class="links"><a id="comfy-link">Open ComfyUI</a><a id="jupyter-link">Open JupyterLab</a></div></section>
+<p>Jupyter requires your Pod’s token from RunPod → Connect. Open <code>START_HERE.ipynb</code> for instructions. ComfyUI files and model folders are in <code>/workspace/ComfyUI</code>.</p>
+<p>If a service fails, inspect <code>/workspace/logs</code> through Jupyter or SSH. Fix the cause and restart the Pod. Services do not automatically restart or rent additional compute.</p>
+<p>The first queued Turbo request downloads approximately 32 GB of official model files. An empty model cache does not prevent the interfaces from opening.</p>
+<p>Save outputs before stopping a Pod with temporary storage. A mounted volume persists user files and has its own storage charge.</p>
+<script>
+function serviceUrl(port,path){let u=new URL(location.href);u.pathname=path;u.search='';u.hash='';if(u.hostname.endsWith('.proxy.runpod.net'))u.hostname=u.hostname.replace(/-8080\./,'-'+port+'.');else u.port=port;return u.href;}
+document.getElementById('comfy-link').href=serviceUrl(8188,'/');document.getElementById('jupyter-link').href=serviceUrl(8888,'/lab');
+async function refresh(){try{let response=await fetch('/health',{cache:'no-store'}),s=await response.json();for(let key of ['comfyui','jupyter'])document.getElementById(key).textContent=s[key];document.getElementById('message').textContent=s.message;}catch(e){document.getElementById('message').textContent='Status unavailable. Check Pod logs and the exposed HTTP ports in RunPod.';}}
+refresh();setInterval(refresh,3000);
+</script></html>

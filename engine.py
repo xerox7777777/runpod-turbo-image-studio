@@ -1,4 +1,4 @@
-"""Shared official-checkpoint inference for ComfyUI and optional Gradio."""
+"""Official-checkpoint inference for the bundled ComfyUI nodes."""
 import gc
 import json
 import logging

@@ -1,7 +1,9 @@
 diffusers @ https://github.com/huggingface/diffusers/archive/85c9fa4caee33d1c5b473395784471d2d7957c1b.zip
 transformers==5.19.0
 accelerate==1.15.0
-gradio==5.50.0
+jupyterlab==4.4.10
+jupyter-server==2.17.0
+ipykernel==6.30.1
 pillow==11.3.0
 torch==2.8.0
 torchvision==0.23.0

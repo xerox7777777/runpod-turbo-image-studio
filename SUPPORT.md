@@ -1,35 +1,32 @@
 # Community support
 
-Report reproducible template, node, startup or workflow bugs at:
-https://github.com/xerox7777777/runpod-turbo-image-studio/issues
+Report reproducible wrapper/workflow/startup bugs in [GitHub Issues](https://github.com/xerox7777777/runpod-turbo-image-studio/issues). Include image version, GPU/VRAM, system RAM, storage mount, workflow and relevant logs. Remove tokens, credentials, proxy URLs and private content. Community support has no guaranteed response time; RunPod handles platform/billing issues and Qwen handles upstream model issues.
 
-Include image version, GPU/VRAM, resolution, whether Generate or Edit failed,
-workflow JSON, and the relevant traceback from Pod logs. Remove API keys,
-proxy URLs, passwords, private prompts and private images. Share images only
-when you are comfortable making them public.
+## An interface will not open
 
-This is a community project. No response time or ongoing support service is
-promised. RunPod handles platform/billing issues; Qwen handles upstream model
-issues. GitHub Issues is for this wrapper and its packaging.
+1. Check the image version and Connect HTTP ports: **8080 status**, **8188 ComfyUI**, **8888 JupyterLab**. Port 7860 was removed. A Pod created before this template update keeps its old configuration; deploy the new template, or update its image, ports and Start Jupyter setting then restart. Save existing container outputs before any reset.
+2. Running can mean the host is still pulling/extracting the image. The proxy may return 404 then 502 before a service binds. Open 8080 after the container starts and wait for both services to say ready.
+3. Jupyter asks for your per-Pod token from RunPod → Connect. Do not use a shared password. Without a platform-supplied token, use SSH and `jupyter server list` to retrieve the generated token. Wrong/missing tokens cannot access its files or terminals.
+4. Open `/workspace/logs/comfyui.log`, `jupyter.log` and `service-status.json` in Jupyter or over SSH. ComfyUI failure leaves Jupyter available. Correct the error, then restart from RunPod. There is no automatic service restart or additional paid deployment.
+5. Existing unrelated `/workspace/ComfyUI` is not overwritten. Back up/rename it through Jupyter and use this template's pinned bundle, or deploy with an empty workspace. A partly copied first-boot installation without its revision marker is also reported as a conflict.
+6. If both services are unavailable, inspect container startup logs in RunPod. If the host cannot restart because its GPU was rented by someone else, use RunPod migration or choose another available host; application changes cannot create host capacity.
 
-## Troubleshooting
+## Models and storage
 
-- **502 or service missing:** inspect Pod logs; open ComfyUI on port 8188 in
-  default mode, or Gradio on 7860 with UI_MODE=gradio. The other port has no server.
-- **No CUDA:** choose an NVIDIA GPU; CPU startup checks cannot generate images.
-- **Out of memory:** start at 1024×1024, run one request at a time, close other
-  GPU workloads or use a larger card. The shared engine uses model CPU offload.
-  On OOM it clears its pipeline so the next request reloads it.
-- **First request slow:** the checkpoint downloads and loads lazily; inspect
-  logs. Later requests reuse the loaded model. Network/cache failures report
-  an actionable error; retry resumes Hugging Face's cached download.
-- **Disk full:** increase storage or use a network volume mounted at /workspace.
-  Download output files before stopping; container-disk data can be lost.
-- **Missing input:** upload and select an image in LoadImage before queueing Edit.
-- **Missing nodes:** use this image and its bundled workflows; arbitrary third
-  party workflows/custom nodes are not installed or supported.
-- **Blank prompt/bad size:** dimensions must be 512–2752, divisible by 16;
-  enter a nonempty prompt. Batch image editing accepts one image per request.
-- **ComfyUI authentication:** COMFY_LISTEN=127.0.0.1 and an SSH tunnel protect
-  access. UI_USERNAME/PASSWORD apply only to Gradio; startup rejects them in
-  ComfyUI mode to prevent a false expectation of password protection.
+Open [MODEL_FOLDERS.md](MODEL_FOLDERS.md) or `/workspace/START_HERE.ipynb`. Upload small files in Jupyter; download large models directly through its Terminal. Standard ComfyUI models must use compatible workflows. The official Turbo nodes do not automatically load checkpoints/LoRAs added to other folders. Custom-node requirements are not automatically installed.
+
+A volume mounted at `/workspace` preserves files. Without one, they are temporary. Download original outputs before stopping; volume storage can still bill after GPU compute stops. An empty cache does not prevent the interfaces from opening; the first queued Turbo request downloads official weights.
+
+## Inference errors
+
+* Missing input: upload/select an image in LoadImage before queuing image-edit.
+* Bad prompt/size: use a nonempty prompt and dimensions 512–2752 divisible by 16. Single-image editing accepts one image per request.
+* No CUDA: choose an NVIDIA GPU; CPU startup checks cannot generate images.
+* OOM: use smaller dimensions, close other workloads or choose more VRAM/RAM. OOM clears the pipeline before retry. A40 with 50 GB system RAM was tested, not established as a universal minimum.
+* Download/cache/output failure: check disk space, network access and permissions. Cached Hugging Face downloads resume on retry. Larger user models need more storage.
+* Cancel/loading: cancellation is checked between denoising steps and may wait for an in-flight operation or initial load. After cancellation the next request reloads the model.
+* Repeated result: identical inputs and seed can reuse ComfyUI's cache. Change the seed for a fresh execution.
+
+## Access
+
+Jupyter requires its per-Pod token. ComfyUI is unauthenticated by default; for private access set `COMFY_LISTEN=127.0.0.1` and use SSH tunneling. Gradio was removed and old UI_USERNAME/UI_PASSWORD settings do not protect ComfyUI.
