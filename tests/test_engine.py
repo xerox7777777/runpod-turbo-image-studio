@@ -243,6 +243,7 @@ class EngineTests(unittest.TestCase):
         for ratio in node.RATIOS:
             w,h,_=node.calculate('aspect_ratio',ratio,1.048576,1,1024,1024)
             self.assertEqual((w%16,h%16),(0,0))
+            self.assertLessEqual(w*h,1024*1024)
             self.assertLess(abs(w/h-node.RATIOS[ratio]),0.04)
         w,h,_=node.calculate('match_input','1:1',1.048576,1,1024,1024,torch.zeros(1,64,96,3))
         self.assertLess(abs(w/h-1.5),0.04)

@@ -205,7 +205,8 @@ class TurboResolution:
             w, h = math.sqrt(area*ratio), math.sqrt(area/ratio)
         else:
             raise ValueError('Choose aspect_ratio, match_input or manual sizing.')
-        w, h = (int(round(x*multiplier/16))*16 for x in (w,h))
+        # Round down so alignment cannot push a nominal 1 MP preset into CPU offload.
+        w, h = (int(math.floor(x*multiplier/16))*16 for x in (w,h))
         if not (512 <= w <= 2752 and 512 <= h <= 2752):
             raise ValueError(f'Calculated {w}×{h} is outside 512–2752 per dimension. Adjust target megapixels/multiplier or use manual mode.')
         details = json.dumps({'mode': mode, 'aspect_ratio': aspect_ratio if mode == 'aspect_ratio' else None,
