@@ -6,6 +6,7 @@ __pycache__
 venv
 outputs
 *.png
+!examples/mug-before.png
 *.jpg
 *.jpeg
 *.safetensors

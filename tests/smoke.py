@@ -51,6 +51,8 @@ def studio_verify(data):
     assert state['ready'],state
     root=jupyter_request('/api/contents')
     assert 'ComfyUI' in [item['name'] for item in root['content']]
+    assert (SMOKE_WORKSPACE/'ComfyUI/input/example-red-mug.png').is_file(), 'Bundled edit input missing from image'
+    assert (SMOKE_WORKSPACE/'ComfyUI/custom_nodes/turbo_official/web/details.js').is_file(), 'Run-details frontend missing'
     checkpoint_folder=jupyter_request('/api/contents/ComfyUI/models/checkpoints')
     assert isinstance(checkpoint_folder,dict) and checkpoint_folder['type']=='directory',checkpoint_folder
     cookies=http.cookiejar.CookieJar()
