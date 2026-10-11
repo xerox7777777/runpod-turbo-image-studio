@@ -27,10 +27,10 @@ Open `START_HERE.ipynb` in Jupyter for instructions. To use Turbo, close ComfyUI
 
 | Workflow | Purpose |
 | --- | --- |
-| [Turbo-Generation](workflows/Turbo-Generation.json) | 1024×1024 generation |
-| [Turbo-Portrait](workflows/Turbo-Portrait.json) | 768×1024 generation |
-| [Turbo-Landscape](workflows/Turbo-Landscape.json) | 1024×768 generation |
-| [Turbo-Image-Edit](workflows/Turbo-Image-Edit.json) | Upload/select an image in LoadImage, then describe changes |
+| [Turbo-Fast-Generation](workflows/Turbo-Fast-Generation.json) | 1024×1024 generation |
+| [Turbo-Fast-Portrait](workflows/Turbo-Fast-Portrait.json) | 768×1024 generation |
+| [Turbo-Fast-Landscape](workflows/Turbo-Fast-Landscape.json) | 1024×768 generation |
+| [Turbo-Fast-Image-Edit](workflows/Turbo-Fast-Image-Edit.json) | Upload/select an image in LoadImage, then describe changes |
 
 The first queued request downloads roughly 32 GB of official checkpoint files. Opening either interface does not download weights. The bundled OfficialTurbo nodes call Qwen's official Diffusers pipeline with its saved Turbo schedule and KV caching. They support generation and single-image editing; masked inpainting and multi-image editing are not included. The modular workflows include an optional compatible transformer LoRA loader. Identical inputs/seed may reuse ComfyUI's cache; change the seed for a fresh result.
 
