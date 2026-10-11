@@ -1,6 +1,6 @@
 # v0.4.2 performance verification
 
-11 October 2026. Existing user-authorized A40 Pod gc9gtw07pzf9di, 48 GiB class VRAM, 50 GB RAM. No additional Pod or paid storage was created. Official Qwen Turbo revision d65dbc9a7e8f6b5479e33dee6030eaab2a906509, BF16, eight saved-schedule steps, CFG 1, KV cache enabled, output 1024x1024.
+11 October 2026. Existing user-authorized A40 Pod, 48 GiB class VRAM, 50 GB RAM. No additional Pod or paid storage was created. Official Qwen Turbo revision d65dbc9a7e8f6b5479e33dee6030eaab2a906509, BF16, eight saved-schedule steps, CFG 1, KV cache enabled, output 1024x1024.
 
 ## Measurements
 
@@ -30,5 +30,9 @@ Turbo-Fast graphs include one Saved Turbo Image output node that shows the origi
 The user's reference is g8ow1s1s0a, image ls250824/run-comfyui-image2:09102026, not the other nomadoor template reviewed previously. Its live public configuration selects BF16 above 40 GiB VRAM and includes both standard and Turbo workflows. It also downloads modified third-party text encoders and prompt enhancers, which were not copied/downloaded. Direct workflow JSON links under provisioning.rozenlaan.site returned HTTP 403 and were blocked in browser navigation, so their current node-level implementation was not verified. The public template and author's documentation were inspected. The other template's workflow JSONs were inspected earlier but are a different reference.
 
 ## Tests and limits
+
+The documentation follow-up v0.4.3 passed all 33 regressions and CPU service/restart preservation checks in build 38169670760. Its public GHCR manifest was retrieved anonymously. Template 92ov0cv1fr was updated to that image and read back as public=true, serverless=false. No fresh paid Pod was deployed; GPU tests exercised the same engine/nodes patched into the existing Pod, with backups.
+
+An additional warm live generation measured 6.696s inference, zero loading and 8.297s request-to-observed completion. Live API editing took 10.797s including polling/network overhead. Initial live generation took 20.906s including 11.738s loading. These total timings differ from inference timing. Original PNG/JSON pairs and a browser screenshot were saved locally. The agent's temporary Jupyter kernel was closed; the user's Pod remains running.
 
 33 regression tests and real CPU service checks passed in container CI run 38169133823. Live Fast API generation measured 7.318s inference plus 11.738s initial loading; input-image editing measured 8.953s inference. Browser Run produced one blue mug from the bundled red mug input in 8.864s, with no loading. These tests used the patched actual ComfyUI service. The documentation follow-up image is v0.4.3; its engine and nodes are unchanged from the measured v0.4.2 build. The image/node output path uses only files within the configured ComfyUI output root. Jupyter and the user's original ComfyUI service remained available during isolated tests. Actual GPU OOM/disk-full were not induced. GPU residency consumes more VRAM; the user must avoid competing workloads. Per-mode timing is inference time, with loading separately recorded.
